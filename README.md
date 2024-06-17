@@ -35,13 +35,17 @@
 
 **$\xi$**: context资产的波动率scaled回报率序列
 
-**$x$**: 一个趋势序列
+**$x$**: 一个趋势序列，$\sigma_t^{(i)}$ 是之前60天的 exponentially weighted moving standard deviation of returns
 
-![回报序列](assets/README/image-2.png)
+$$
+\hat{r}^{(i)}_{t-t',t} = r^{(i)}_{t-t',t} / \sigma^{(i)}_t \sqrt{t'},
+$$
 
-![x特征序列](assets/README/image-1.png)
+$$
+\mathbf{x}^{(i)}_t = \text{Concat} \left( [\hat{r}^{(i)}_{t-t',t} \mid t' \in \{1, 21, 63, 126, 252\}], [\text{MACD} (p^{(i)}_{1:t}, S, L) \mid \forall (S, L)] \right).
+$$
 
-## 输出以及损失函数
+## 输出
 
 ![输出以及损失函数](assets/README/image-4.png)
 
@@ -51,7 +55,30 @@
 
 **$\mu_{-l_t:t}$**: 根据输入特征 $x_{-l_t:t}$、静态信息 $s$ 和上下文集 $C$ 预测得到的下一天收益的均值。
 
-**$z_{-l_t:t}$**: 模型预测的交易头寸。根据模型对于次日收益概率密度函数的预测，输入一个前馈神经网络 $PTPG$（即图片上方的FFN） 计算而来。从输入 $x^i_{-l_i:t}$ 这整个模型被称为 **Deep Momentum Network 深度动量网络**
+**$z_{-l_t:t}$**: 模型预测的交易头寸。根据模型对于次日收益概率密度函数的预测，输入一个前馈神经网络，被成为  **P**redictive distribution (mean and standard deviation) **T**o **P**osition $\mathbf{PTP_G}$（即图片上方的FFN） 计算而来。
 
-![前馈神经网络](assets/README/image-6.png)
+从输入 $x^i_{-l_i:t}$ 到 $z_{-l_t:t}$ 这整个模型被称为 **DMN Deep Momentum Network 深度动量网络**
 
+$$
+z^{(i)}_{-l_t:t} = \text{DMN} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) = \left( \tanh \circ \text{Linear} \circ g \right) \left( \mathbf{x}^{(i)}_{-l_t:t} \right)
+$$
+
+## 损失函数
+
+联合损失函数由最大似然估计（MLE）损失和夏普比率（Sharpe Ratio）损失组成，两者的占比由一个超参数 $\alpha$ 控制。
+
+$$
+\mathcal{L}^{MLE}_{Joint}(\theta) = \alpha \mathcal{L}_{MLE}(\theta) + \mathcal{L}^{PTP_G(\cdot)}_{Sharpe}(\theta)
+$$
+
+最大似然估计（MLE）：用于衡量模型预测的均值和标准差与实际观察到的收益之间的差异。
+
+$$
+\mathcal{L}_{MLE}(\theta) = -\frac{1}{|\Omega|} \sum_{(t, i) \in \Omega} \log p \left( \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \middle| \mathbf{x}^{(i)}_{-l_t:t}, s^{(i)}, C \right)
+$$
+
+夏普比率（Sharpe Ratio）: 基于夏普比率的损失函数，衡量模型在风险调整后的收益表现。$\mathbf{PTP_G}$ 模块将预测的均值和标准差转换为交易头寸
+
+$$
+\mathcal{L}_{Sharpe}^{DMN(\cdot)}(\theta) = -\sqrt{252} \frac{\text{mean}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{DMN} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}{\text{std}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{DMN} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}
+$$
