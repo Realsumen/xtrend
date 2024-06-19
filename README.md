@@ -82,3 +82,9 @@ $$
 $$
 \mathcal{L}_{Sharpe}^{DMN(\cdot)}(\theta) = -\sqrt{252} \frac{\text{mean}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{DMN} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}{\text{std}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{DMN} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}
 $$
+
+## 参数
+
+![数据参数以及对应表现](assets/README/image-9.png)
+
+![参数](assets/README/image-8.png)
