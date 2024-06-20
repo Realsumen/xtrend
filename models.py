@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Embedding, ELU, Add, Softmax, LayerNormalization
+from tensorflow.keras.layers import Input, Dense, Embedding, ELU, Add, Softmax, LayerNormalization, LayerNormalization, MultiHeadAttention
 from tensorflow.keras.models import Model
 import numpy as np
 import tensorflow.keras as keras
@@ -14,7 +14,6 @@ class FFN_j(tf.keras.Model):
         """
         super(FFN_j, self).__init__()
         self.hidden_dim = hidden_dim
-        
         self.linear_1 = Dense(units=hidden_dim)
         self.elu = ELU()
         self.linear_3 = Dense(units=hidden_dim)
@@ -172,10 +171,8 @@ class BaselineNeuralForecaster(tf.keras.Model):
         self.hidden_dim = hidden_dim
         self.vsn_model = VSN(sequence_length, hidden_dim, encoding_size=encoding_size)
         self.FFN_3, self.FFN_4 = FFN_j(hidden_dim), FFN_j(hidden_dim)
-        self.lstm_model = tf.keras.layers.LSTM(hidden_dim)
         self.layer_norm = LayerNormalization()
-        self.lstm_model = tf.keras.layers.LSTM(hidden_dim)
-        self.lstm_model = tf.keras.layers.LSTM(hidden_dim)
+        self.lstm_model = tf.keras.layers.LSTM(hidden_dim, return_sequences=True)
         self.FFN_2 = FFN(sequence_length, hidden_dim, encoding_size, output_dim=hidden_dim)
 
     def build(self, input_shape):
@@ -192,7 +189,7 @@ class BaselineNeuralForecaster(tf.keras.Model):
         self.FFN_4.build(s_shape)
         self.lstm_model.build((x_shape[0], x_shape[1], self.vsn_model.ffn.hidden_dim))
         self.layer_norm.build((x_shape[0], self.vsn_model.ffn.hidden_dim))
-        self.FFN_2.build(((x_shape[0], self.hidden_dim), (s_shape[0], s_shape[-1])))
+        self.FFN_2.build(((x_shape[0], x_shape[1], self.vsn_model.ffn.hidden_dim), s_shape))
 
         super(BaselineNeuralForecaster, self).build(input_shape)
 
@@ -207,11 +204,66 @@ class BaselineNeuralForecaster(tf.keras.Model):
             tf.Tensor: 输出张量的维度与隐藏层相等。
         """
         x_ = self.vsn_model(x, s)
-        
         h_0, c_0 = self.FFN_3(s), self.FFN_4(s)
         h_0, c_0 = tf.reduce_mean(h_0, axis=1), tf.reduce_mean(c_0, axis=1)
         outputs = self.lstm_model(x_, initial_state=[h_0, c_0])
-        
-        a_t = LayerNormalization()(x_[:, -1, :] + outputs)
-        result = LayerNormalization()(self.FFN_2(a_t, s[:, 0, :]) + a_t)
+        a_t = LayerNormalization()(x_ + outputs)
+        result = LayerNormalization()(self.FFN_2(a_t, s) + a_t)
         return result
+    
+
+class AttentionWrapper(tf.keras.layers.Layer):
+    def __init__(self, d_model, num_heads, sequence_length, encoding_size):
+        """
+        初始化 AttentionWrapper 类。
+
+        Args:
+            d_model (int): 模型的维度。
+            num_heads (int): 多头注意力的头数。
+            ff_dim (int): 前馈网络的维度。
+        """
+        super(AttentionWrapper, self).__init__()
+        self.hidden_dim = d_model
+        self.self_attention = MultiHeadAttention(num_heads=num_heads, key_dim=d_model)
+        self.cross_attention = MultiHeadAttention(num_heads=num_heads, key_dim=d_model)
+        self.temporal_block = BaselineNeuralForecaster(sequence_length, d_model, encoding_size)
+        self.ffn1 = FFN_j(hidden_dim=d_model)
+        self.ffn2 = FFN_j(hidden_dim=d_model)
+        self.layer_norm1 = LayerNormalization()
+        self.layer_norm2 = LayerNormalization()
+        
+    def build(self, input_shape):
+        """
+        构建层的权重。
+
+        Args:
+            input_shape (tuple): 输入的形状。
+        """
+        V_shape, K_shape, x_shape, s_shape = input_shape
+        self.self_attention.build(value_shape = V_shape, query_shape = V_shape, key_shape = V_shape)
+        self.cross_attention.build(value_shape = V_shape, query_shape = K_shape, key_shape = (x_shape[0], x_shape[1], self.hidden_dim))
+        self.temporal_block.build((x_shape, s_shape))
+        self.ffn1.build(V_shape)
+        self.ffn2.build(V_shape)
+        self.layer_norm = LayerNormalization()
+        super(AttentionWrapper, self).build(input_shape)
+        
+    def call(self, V, K, s, x) -> tf.Tensor:
+        """
+        执行前向传播。
+
+        Args:
+            V (tf.Tensor): 值向量。
+            K (tf.Tensor): 键向量。
+            s (tf.Tensor): 上下文信息。
+            x (tf.Tensor): 输入数据。
+
+        Returns:
+            tf.Tensor: 输出张量。
+        """
+        q = self.temporal_block(x, s)
+        V_ = self.ffn1(self.self_attention(V, V, V))
+        attn_output = self.cross_attention(q, K, V_)
+        output = self.layer_norm(self.ffn2(attn_output))
+        return output
+        

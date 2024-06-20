@@ -108,3 +108,44 @@ def generate_tf_dataset(data_list: list[pd.DataFrame], timesteps: int, context: 
     side_info = np.array(side_info)
     dataset = tf.data.Dataset.from_tensor_slices((feature_sequences, {"date": dates, "side_info": side_info}))
     return dataset
+
+
+def encode_context_info(dataset: tf.data.Dataset) -> tf.Tensor:
+    """
+    对上下文信息进行编码,并返回一个包含编码后的上下文信息的Tensor。
+
+    Args:
+        dataset (tf.data.Dataset): TensorFlow数据集,其中包含特征和上下文信息。
+
+    Returns:
+        tf.Tensor: 编码后的上下文信息Tensor,形状与输入数据集的特征部分匹配。
+    """
+    
+    context_info_values = []
+    encoded_data = []
+
+    print("编码中...")
+    for features, context_info in dataset:
+        side_info = context_info['side_info'].numpy().decode('utf-8')
+        context_info_values.append(side_info)
+
+    unique_context_info = list(set(context_info_values))
+    context_info_map = {val: idx for idx, val in enumerate(unique_context_info)}
+    num_classes = len(unique_context_info)
+
+    def one_hot_encode(value):
+        one_hot = np.zeros(num_classes)
+        one_hot[context_info_map[value]] = 1
+        return one_hot
+
+    for side_info in context_info_values:
+        one_hot_encoded = one_hot_encode(side_info)
+        encoded_data.append(one_hot_encoded)
+
+    encoded_data = tf.ragged.constant(encoded_data).to_tensor(default_value=0.0)
+
+    features, _ = next(iter(dataset))
+    shape = features.shape
+    expanded_tensor = tf.expand_dims(encoded_data, axis=1)
+    encoded_data = tf.tile(expanded_tensor, [1, shape[0], 1])
+    return encoded_data
