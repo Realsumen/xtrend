@@ -1,9 +1,46 @@
 import numpy as np
 import pandas as pd 
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Embedding, ELU, Add, Softmax, LayerNormalization
-from tensorflow.keras.models import Model
-import tensorflow.keras as keras
+from tqdm import tqdm
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.utils import to_categorical
+
+MACD_timescales = [(8, 24), (16, 28), (32, 96)]
+RTN_timescales = [1, 21, 63, 126, 252]
+
+
+def process_data_list(files: list[str], macd_timescales: list=MACD_timescales, rtn_timescales: list=RTN_timescales, test: bool = False) -> list[pd.DataFrame]:
+    """
+    处理文件列表并生成包含特征的数据帧列表。
+
+    Args:
+        files (list[str]): 文件路径列表。
+
+    Returns:
+        list[pd.DataFrame]: 包含处理后数据的数据帧列表。
+    """
+    data_list = []
+    for file in tqdm(files, desc="处理文件中。。"):
+        if file.endswith("xlsx"):
+            data = pd.read_excel(f"data/{file}")[["日期", "收盘价(元)"]]
+            side_info = file.replace(".xlsx", "")
+        elif file.endswith("parquet"):
+            data = pd.read_parquet(f"data/{file}")[["日期", "收盘价(元)"]]
+            side_info = file.replace(".parquet", "")
+        elif file.endswith("csv"):
+            data = pd.read_csv(f"data/{file}")[["日期", "收盘价(元)"]]
+            side_info = file.replace(".csv", "")
+
+        data = data.rename(columns={"日期": "date", "收盘价(元)": "close"}).sort_values("date")
+        data["side_info"] = side_info
+        try:
+            data = generate_features(data, macd_timescales, rtn_timescales)
+        except:
+            print(f"{side_info} 中含有空值，其中的数据没有录入列表")
+            continue
+        if test: data = data.iloc[:64, :]
+        data_list.append(data)
+    return data_list
 
 
 def generate_features(data: pd.DataFrame, macd_timscales: list, rtn_timscales: list) -> pd.DataFrame:
@@ -63,32 +100,34 @@ def generate_features(data: pd.DataFrame, macd_timscales: list, rtn_timscales: l
         data[f"rtn_{i}"] = pd.Series(normalized_rtn, index=date_series)
         
     data.reset_index(inplace=True)
+    data.dropna(inplace=True)
     return data
 
 
-def generate_tf_dataset(data_list: list[pd.DataFrame], timesteps: int, context: bool = False) -> tf.data.Dataset:
+def generate_tensors(data_list: list[pd.DataFrame], timesteps: int, contain_next_day_rtn: bool = False, return_labels: bool = False):
     """
-    生成TensorFlow数据集。
+    生成张量序列。
 
     Args:
-        data_list (list[pd.DataFrame]): 数据列表, 每个元素为一个数据帧。
-        timesteps (int): 时间步数, 用于创建序列。
-        context (bool): 是否包含次日回报率信息。如果为True, 保留 'rtn_next_day' 列。
+        data_list (list[pd.DataFrame]): 数据帧列表。
+        timesteps (int): 时间步长。
+        contain_next_day_rtn (bool): 是否包含“rtn_next_day”列。默认值为False。
+        return_labels (bool): 是否返回标签数据。默认值为True。
 
     Returns:
-        tf.data.Dataset: 生成的TensorFlow数据集, 包含特征序列、日期和辅助信息。
+        tuple: 包含特征序列、日期和附加信息的张量。如果 return_label_df 为 True, 还返回 rtn_next_day 和 sigma。
     """
     feature_sequences = []
     dates = []
     side_info = []
+    rtn_next_day = []
+    std = []
     for data in data_list:
-        if not context:
-            X = data.dropna(axis=0).drop(columns=["rtn_next_day", "close", "rtn", "sigma"])
-        else:
-            X = data.dropna(axis=0).drop(columns=["close", "rtn", "sigma"])
-        X["date"] = pd.to_datetime(X["date"]).dt.strftime('%Y-%m-%d')
-        feature_cols = X.columns.to_list()
-        for col in ("date", "side_info"): feature_cols.remove(col)
+        data["date"] = pd.to_datetime(data["date"]).dt.strftime('%Y-%m-%d')
+        feature_cols = data.columns.to_list()
+        for col in ("date", "sigma", "side_info", "rtn_next_day", "close", "rtn"): 
+            if contain_next_day_rtn and col == "rtn_next_day": continue
+            feature_cols.remove(col)
 
         def create_sequences(data, timesteps):
             sequences = []
@@ -97,55 +136,51 @@ def generate_tf_dataset(data_list: list[pd.DataFrame], timesteps: int, context: 
                 sequences.append(sequence)
             return sequences
 
-        sequences = create_sequences(X, timesteps)
-
+        sequences = create_sequences(data, timesteps)
         feature_sequences = feature_sequences + [seq[feature_cols].values for seq in sequences]
         dates = dates + [seq['date'].values[-1] for seq in sequences]
         side_info = side_info + [seq['side_info'].values[-1] for seq in sequences]
+        rtn_next_day = rtn_next_day + [seq['rtn_next_day'].values[-1] for seq in sequences]
+        std = std + [seq['sigma'].values[-1] for seq in sequences]
         
     feature_sequences = np.array(feature_sequences)
     dates = np.array(dates)
     side_info = np.array(side_info)
-    dataset = tf.data.Dataset.from_tensor_slices((feature_sequences, {"date": dates, "side_info": side_info}))
-    return dataset
+    rtn_next_day = np.array(rtn_next_day)
+    std = np.array(std)
+    
+    feature_sequences_tensor = tf.convert_to_tensor(feature_sequences, dtype=tf.float32)
+    dates_tensor = tf.convert_to_tensor(dates, dtype=tf.string)
+    side_info_tensor = tf.convert_to_tensor(side_info, dtype=tf.string)
+    if not return_labels:
+        return (feature_sequences_tensor, dates_tensor, side_info_tensor)
+    return (feature_sequences_tensor, dates_tensor, side_info_tensor), (rtn_next_day, std)
 
 
-def encode_context_info(dataset: tf.data.Dataset) -> tf.Tensor:
+def side_info_tensor_encoder(string_tensor: tf.Tensor, return_dict = True):
     """
-    对上下文信息进行编码,并返回一个包含编码后的上下文信息的Tensor。
+    对字符串张量进行one-hot编码, 并返回one-hot编码后的张量及对应的映射表。
 
     Args:
-        dataset (tf.data.Dataset): TensorFlow数据集,其中包含特征和上下文信息。
+        string_tensor (tf.Tensor): 输入的字符串张量。
 
     Returns:
-        tf.Tensor: 编码后的上下文信息Tensor,形状与输入数据集的特征部分匹配。
+        tuple: one-hot编码后的张量和对应的映射表。
     """
-    
-    context_info_values = []
-    encoded_data = []
+    string_list = [s.decode('utf-8') for s in string_tensor.numpy()]
 
-    print("编码中...")
-    for features, context_info in dataset:
-        side_info = context_info['side_info'].numpy().decode('utf-8')
-        context_info_values.append(side_info)
+    # 初始化Tokenizer
+    tokenizer = Tokenizer(filters='')
+    tokenizer.fit_on_texts(string_list)
 
-    unique_context_info = list(set(context_info_values))
-    context_info_map = {val: idx for idx, val in enumerate(unique_context_info)}
-    num_classes = len(unique_context_info)
+    # 将字符串转换为整数索引
+    integer_encoded = tokenizer.texts_to_sequences(string_list)
+    integer_encoded = [item[0] for item in integer_encoded]
+    one_hot_encoded = to_categorical(integer_encoded)
+    word_index = tokenizer.word_index
+    index_word = {v: k for k, v in word_index.items()}
 
-    def one_hot_encode(value):
-        one_hot = np.zeros(num_classes)
-        one_hot[context_info_map[value]] = 1
-        return one_hot
-
-    for side_info in context_info_values:
-        one_hot_encoded = one_hot_encode(side_info)
-        encoded_data.append(one_hot_encoded)
-
-    encoded_data = tf.ragged.constant(encoded_data).to_tensor(default_value=0.0)
-
-    features, _ = next(iter(dataset))
-    shape = features.shape
-    expanded_tensor = tf.expand_dims(encoded_data, axis=1)
-    encoded_data = tf.tile(expanded_tensor, [1, shape[0], 1])
-    return encoded_data
+    one_hot_encoded_tensor = tf.convert_to_tensor(one_hot_encoded, dtype=tf.float32)
+    if return_dict:
+        return one_hot_encoded_tensor, index_word
+    return word_index
