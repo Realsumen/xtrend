@@ -1,5 +1,12 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Dense, ELU, Softmax, LayerNormalization, LayerNormalization, MultiHeadAttention
+from tensorflow.keras.layers import (
+    Dense,
+    ELU,
+    Softmax,
+    LayerNormalization,
+    LayerNormalization,
+    MultiHeadAttention,
+)
 from tensorflow.keras.models import Model
 
 
@@ -15,7 +22,7 @@ class FFN_j(Model):
         self.linear_1 = Dense(units=hidden_dim)
         self.elu = ELU()
         self.linear_3 = Dense(units=hidden_dim)
-    
+
     def build(self, input_shape):
         """构建模型的子层。
 
@@ -27,7 +34,7 @@ class FFN_j(Model):
         self.linear_3.build(new_shape)
         self.elu.build(new_shape)
         super(FFN_j, self).build(input_shape)
-    
+
     def call(self, h_t) -> tf.Tensor:
         """前向传播方法。
 
@@ -44,7 +51,7 @@ class FFN_j(Model):
 
 
 class FFN(Model):
-    def __init__(self, sequence_length, hidden_dim, encoding_size, output_dim = None):
+    def __init__(self, sequence_length, hidden_dim, encoding_size, output_dim=None):
         """初始化 FFN 类。
 
         Args:
@@ -54,16 +61,17 @@ class FFN(Model):
             output_dim (int, optional): 输出维度。默认为 sequence_length。
         """
         super(FFN, self).__init__()
-        if output_dim is None: output_dim = sequence_length
+        if output_dim is None:
+            output_dim = sequence_length
         self.sequence_length = sequence_length
         self.hidden_dim = hidden_dim
         self.encoding_size = encoding_size
-        
+
         self.linear_1 = Dense(units=hidden_dim)
         self.elu = ELU()
-        self.linear_2 = Dense(units=hidden_dim)       
+        self.linear_2 = Dense(units=hidden_dim)
         self.linear_3 = Dense(units=output_dim)
-    
+
     def build(self, input_shape):
         """初始化 FFN 类。
 
@@ -81,7 +89,7 @@ class FFN(Model):
         self.elu.build(new_shape)
         self.linear_3.build(new_shape)
         super(FFN, self).build(input_shape)
-    
+
     def call(self, h_t, s) -> tf.Tensor:
         """前向传播方法。
 
@@ -112,8 +120,10 @@ class VSN(Model):
         super(VSN, self).__init__()
         self.ffn = FFN(sequence_length, hidden_dim, encoding_size)
         self.softmax = Softmax(axis=2)
-        self.sequence_FFN = [FFN_j(hidden_dim = hidden_dim) for _ in range(sequence_length)]
-    
+        self.sequence_FFN = [
+            FFN_j(hidden_dim=hidden_dim) for _ in range(sequence_length)
+        ]
+
     def build(self, input_shape):
         """构建模型的子层。
 
@@ -127,7 +137,7 @@ class VSN(Model):
             ffn_j.build((x_shape[0] * x_shape[1], 1))
         self.softmax.build((x_shape[0], x_shape[1], self.ffn.hidden_dim))
         super(VSN, self).build(input_shape)
-    
+
     def call(self, x, s=None):
         """前向传播方法。
 
@@ -146,16 +156,24 @@ class VSN(Model):
         for i in range(self.ffn.sequence_length):
             ff_output = self.sequence_FFN[i](tf.expand_dims(x_t_reshaped[:, i], axis=1))
             outputs.append(ff_output)
-        
-        outputs = tf.stack(outputs, axis=1)  # Shape: [batch_size * time_steps, sequence_length, hidden_dim]
-        outputs = tf.reshape(outputs, (batch_size, time_steps, seq_len, -1))  # Reshape back
 
-        w_t_expanded = tf.expand_dims(w_t, axis=-1)  # Shape: [batch_size, time_steps, sequence_length, 1]
+        outputs = tf.stack(
+            outputs, axis=1
+        )  # Shape: [batch_size * time_steps, sequence_length, hidden_dim]
+        outputs = tf.reshape(
+            outputs, (batch_size, time_steps, seq_len, -1)
+        )  # Reshape back
+
+        w_t_expanded = tf.expand_dims(
+            w_t, axis=-1
+        )  # Shape: [batch_size, time_steps, sequence_length, 1]
         weighted_outputs = outputs * w_t_expanded  # Element-wise multiplication
-        vsn_output = tf.reduce_sum(weighted_outputs, axis=2)  # Sum over the sequence_length dimension
+        vsn_output = tf.reduce_sum(
+            weighted_outputs, axis=2
+        )  # Sum over the sequence_length dimension
         return vsn_output
-    
-    
+
+
 class BaselineNeuralForecaster(Model):
     def __init__(self, sequence_length, hidden_dim, encoding_size):
         """初始化 BaselineNeuralForecaster 类。
@@ -171,7 +189,9 @@ class BaselineNeuralForecaster(Model):
         self.FFN_3, self.FFN_4 = FFN_j(hidden_dim), FFN_j(hidden_dim)
         self.layer_norm = LayerNormalization()
         self.lstm_model = tf.keras.layers.LSTM(hidden_dim, return_sequences=True)
-        self.FFN_2 = FFN(sequence_length, hidden_dim, encoding_size, output_dim=hidden_dim)
+        self.FFN_2 = FFN(
+            sequence_length, hidden_dim, encoding_size, output_dim=hidden_dim
+        )
 
     def build(self, input_shape):
         """构建模型的子层。
@@ -179,14 +199,16 @@ class BaselineNeuralForecaster(Model):
         Args:
             input_shape (tuple): 输入的形状，包含 x_shape 和 s_shape。
         """
-        x_shape = input_shape[0]  
+        x_shape = input_shape[0]
         s_shape = input_shape[1]
 
         self.vsn_model.build((x_shape, s_shape))
         self.FFN_3.build(s_shape)
         self.FFN_4.build(s_shape)
         self.lstm_model.build((x_shape[0], x_shape[1], self.vsn_model.ffn.hidden_dim))
-        self.FFN_2.build(((x_shape[0], x_shape[1], self.vsn_model.ffn.hidden_dim), s_shape))
+        self.FFN_2.build(
+            ((x_shape[0], x_shape[1], self.vsn_model.ffn.hidden_dim), s_shape)
+        )
 
         super(BaselineNeuralForecaster, self).build(input_shape)
 
@@ -207,7 +229,7 @@ class BaselineNeuralForecaster(Model):
         a_t = LayerNormalization()(x_ + outputs)
         result = LayerNormalization()(self.FFN_2(a_t, s) + a_t)
         return result
-    
+
 
 class AttentionWrapper(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads, sequence_length, encoding_size):
@@ -223,12 +245,13 @@ class AttentionWrapper(tf.keras.layers.Layer):
         self.hidden_dim = d_model
         self.self_attention = MultiHeadAttention(num_heads=num_heads, key_dim=d_model)
         self.cross_attention = MultiHeadAttention(num_heads=num_heads, key_dim=d_model)
-        self.temporal_block = BaselineNeuralForecaster(sequence_length, d_model, encoding_size)
+        self.temporal_block = BaselineNeuralForecaster(
+            sequence_length, d_model, encoding_size
+        )
         self.ffn1 = FFN_j(hidden_dim=d_model)
         self.ffn2 = FFN_j(hidden_dim=d_model)
         self.layer_norm = LayerNormalization()
 
-        
     def build(self, input_shape):
         """
         构建层的权重。
@@ -237,13 +260,19 @@ class AttentionWrapper(tf.keras.layers.Layer):
             input_shape (tuple): 输入的形状。
         """
         V_shape, K_shape, x_shape, s_shape = input_shape
-        self.self_attention.build(value_shape = V_shape, query_shape = V_shape, key_shape = V_shape)
-        self.cross_attention.build(value_shape = V_shape, query_shape = K_shape, key_shape = (x_shape[0], x_shape[1], self.hidden_dim))
+        self.self_attention.build(
+            value_shape=V_shape, query_shape=V_shape, key_shape=V_shape
+        )
+        self.cross_attention.build(
+            value_shape=V_shape,
+            query_shape=K_shape,
+            key_shape=(x_shape[0], x_shape[1], self.hidden_dim),
+        )
         self.temporal_block.build((x_shape, s_shape))
         self.ffn1.build(V_shape)
         self.ffn2.build(V_shape)
         super(AttentionWrapper, self).build(input_shape)
-        
+
     def call(self, V, K, s, x) -> tf.Tensor:
         """
         执行前向传播。
@@ -262,7 +291,7 @@ class AttentionWrapper(tf.keras.layers.Layer):
         attn_output = self.cross_attention(q, K, V_)
         output = self.layer_norm(self.ffn2(attn_output))
         return output
-    
+
 
 class Decoder(Model):
     def __init__(self, sequence_length, hidden_dim, encoding_size):
@@ -282,7 +311,7 @@ class Decoder(Model):
         self.FFN_2 = FFN(hidden_dim, hidden_dim, encoding_size)
         self.fcn = Dense(units=2)
         self.PTP = FFN_j(1)
-        
+
     def build(self, input_shape):
         """
         构建层的权重。
@@ -290,9 +319,9 @@ class Decoder(Model):
         Args:
             input_shape (tuple): 输入的形状。
         """
-        x_shape = input_shape[0]  
+        x_shape = input_shape[0]
         s_shape = input_shape[1]
-        
+
         self.vsn_model.build((x_shape, s_shape))
         self.FFN_1.build((x_shape[0], x_shape[1], self.hidden_dim * 2))
         self.FFN_3.build(s_shape)
@@ -302,7 +331,7 @@ class Decoder(Model):
         self.fcn.build((x_shape[0], x_shape[1], self.hidden_dim))
         self.PTP.build((x_shape[0], x_shape[1], 2))
         super(Decoder, self).build(input_shape)
-        
+
     def call(self, x, s, y) -> tf.Tensor:
         """
         执行前向传播。
@@ -325,8 +354,8 @@ class Decoder(Model):
         properties = self.fcn(result)
         positions = self.PTP(properties)
         return properties, positions
-        
-        
+
+
 class ModelWrapper(Model):
     def __init__(self, sequence_length, hidden_dim, encoding_size, num_heads):
         """
@@ -341,11 +370,17 @@ class ModelWrapper(Model):
         super(ModelWrapper, self).__init__()
         self.hidden_dim = hidden_dim
         self.info_seq_length = sequence_length + 1
-        self.V_encoder = BaselineNeuralForecaster(self.info_seq_length, hidden_dim, encoding_size)
-        self.K_encoder = BaselineNeuralForecaster(sequence_length, hidden_dim, encoding_size)
-        self.attention_mod = AttentionWrapper(hidden_dim, num_heads, sequence_length, encoding_size)
+        self.V_encoder = BaselineNeuralForecaster(
+            self.info_seq_length, hidden_dim, encoding_size
+        )
+        self.K_encoder = BaselineNeuralForecaster(
+            sequence_length, hidden_dim, encoding_size
+        )
+        self.attention_mod = AttentionWrapper(
+            hidden_dim, num_heads, sequence_length, encoding_size
+        )
         self.decoder = Decoder(sequence_length, hidden_dim, encoding_size)
-    
+
     def build(self, input_shape):
         """
         构建层的权重。
@@ -360,7 +395,7 @@ class ModelWrapper(Model):
         self.attention_mod.build((inter_dimensions, inter_dimensions, x_shape, s_shape))
         self.decoder.build((x_shape, s_shape))
         super(ModelWrapper, self).build(input_shape)
-        
+
     def call(self, x_c, x_c_r, s_c, x, s) -> tuple:
         """
         执行前向传播。
@@ -373,12 +408,11 @@ class ModelWrapper(Model):
             s_t (tf.Tensor): 目标状态向量。
 
         Returns:
-            properties: 一个长度为2的tuple, 分别为明日收益率的期望和标准差 
+            properties: 一个长度为2的tuple, 分别为明日收益率的期望和标准差
             positions: 明日持仓
         """
         V = self.V_encoder(x_c_r, s_c)
         K = self.K_encoder(x_c, s_c)
         y = self.attention_mod(V, K, s, x)
-        print("hhh")
         properties, positions = self.decoder(x, s, y)
         return properties, positions
