@@ -260,7 +260,7 @@ def data_binder(
     """
     target_features, target_dates, target_info = target_set
     context_features, context_dates, side_info = context_set
-    mean_set, std_set = labels
+    rtn_set, std_set = labels
 
     def date_to_int(date):
         date_int = tf.strings.to_number(
@@ -318,7 +318,7 @@ def data_binder(
         target_date = target_dates[i]
         target_inf = target_info[i]
         target_feature = target_features[i]
-        mean, std = mean_set[i], std_set[i]
+        rtn, std = rtn_set[i], std_set[i]
 
         context_feature, context_date, side_inf = find_matching_context(
             target_date, target_inf, context_dates, context_features, side_info
@@ -331,7 +331,7 @@ def data_binder(
             matched_target_features.append(target_feature)
             matched_target_dates.append(target_date)
             matched_target_info.append(target_inf)
-            target_distribution.append((mean, std))
+            target_distribution.append((rtn, std))
 
     if not matched_context_features:
         matched_context_features = tf.constant([])

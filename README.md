@@ -57,11 +57,8 @@ $$
 
 **$z_{-l_t:t}$**: 模型预测的交易头寸。根据模型对于次日收益概率密度函数的预测，输入一个前馈神经网络，被成为  **P**redictive distribution (mean and standard deviation) **T**o **P**osition $\mathbf{PTP_G}$（即图片上方的FFN） 计算而来。
 
-从输入 $x^i_{-l_i:t}$ 到 $z_{-l_t:t}$ 这整个模型被称为 **DMN Deep Momentum Network 深度动量网络**
+从输入 $x^i_{-l_i:t}$ 到 $z_{-l_t:t}$ 这整个模型被称为 **Cross** Attentive Time-Series **Trend** Network **XTrend**
 
-$$
-z^{(i)}_{-l_t:t} = \text{DMN} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) = \left( \tanh \circ \text{Linear} \circ g \right) \left( \mathbf{x}^{(i)}_{-l_t:t} \right)
-$$
 
 ## 损失函数
 
@@ -71,16 +68,16 @@ $$
 \mathcal{L}^{MLE}_{Joint}(\theta) = \alpha \mathcal{L}_{MLE}(\theta) + \mathcal{L}^{PTP_G(\cdot)}_{Sharpe}(\theta)
 $$
 
-最大似然估计（MLE）：用于衡量模型预测的均值和标准差与实际观察到的收益之间的差异。
+最大似然估计（MLE）：用于衡量模型预测的均值和标准差与实际观察到的收益之间的差异。具体来说，我们的模型 **XTrend** 最后输出一个长度为$l_t$的时间序列，每个时间步特征数目为2。这个序列为我们的样本次日分布特征值。取最后一个时间步输出作为下一日的分布特征，之前的时间步被舍弃。
 
 $$
 \mathcal{L}_{MLE}(\theta) = -\frac{1}{|\Omega|} \sum_{(t, i) \in \Omega} \log p \left( \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \middle| \mathbf{x}^{(i)}_{-l_t:t}, s^{(i)}, C \right)
 $$
 
-夏普比率（Sharpe Ratio）: 基于夏普比率的损失函数，衡量模型在风险调整后的收益表现。$\mathbf{PTP_G}$ 模块将预测的均值和标准差转换为交易头寸
+夏普比率（Sharpe Ratio）: 基于夏普比率的损失函数，衡量模型在风险调整后的收益表现。$\mathbf{PTP_G}$ 模块将预测的均值和标准差转换为交易头寸。具体来说，我们的模型 **XTrend** 最后输出一个长度为$l_t$的时间序列，取最后一个时间步作为下一日的持仓，之前的时间步被舍弃。
 
 $$
-\mathcal{L}_{Sharpe}^{DMN(\cdot)}(\theta) = -\sqrt{252} \frac{\text{mean}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{DMN} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}{\text{std}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{DMN} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}
+\mathcal{L}_{Sharpe}^{XTrend(\cdot)}(\theta) = -\sqrt{252} \frac{\text{mean}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{XTrend} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}{\text{std}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{XTrend} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}
 $$
 
 ## 参数
