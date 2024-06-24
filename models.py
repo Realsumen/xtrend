@@ -1,10 +1,11 @@
 import tensorflow as tf
+from tensorflow.keras.activations import tanh
 from tensorflow.keras.layers import (
     Dense,
     ELU,
     Softmax,
     LayerNormalization,
-    LayerNormalization,
+    LSTM,
     MultiHeadAttention,
 )
 from tensorflow.keras.models import Model
@@ -188,7 +189,7 @@ class BaselineNeuralForecaster(Model):
         self.vsn_model = VSN(sequence_length, hidden_dim, encoding_size=encoding_size)
         self.FFN_3, self.FFN_4 = FFN_j(hidden_dim), FFN_j(hidden_dim)
         self.layer_norm = LayerNormalization()
-        self.lstm_model = tf.keras.layers.LSTM(hidden_dim, return_sequences=True)
+        self.lstm_model = LSTM(hidden_dim, return_sequences=True)
         self.FFN_2 = FFN(
             sequence_length, hidden_dim, encoding_size, output_dim=hidden_dim
         )
@@ -231,17 +232,17 @@ class BaselineNeuralForecaster(Model):
         return result
 
 
-class AttentionWrapper(tf.keras.layers.Layer):
+class Encoder(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads, sequence_length, encoding_size):
         """
-        初始化 AttentionWrapper 类。
+        初始化 Encoder 类。
 
         Args:
             d_model (int): 模型的维度。
             num_heads (int): 多头注意力的头数。
             ff_dim (int): 前馈网络的维度。
         """
-        super(AttentionWrapper, self).__init__()
+        super(Encoder, self).__init__()
         self.hidden_dim = d_model
         self.self_attention = MultiHeadAttention(num_heads=num_heads, key_dim=d_model)
         self.cross_attention = MultiHeadAttention(num_heads=num_heads, key_dim=d_model)
@@ -271,7 +272,7 @@ class AttentionWrapper(tf.keras.layers.Layer):
         self.temporal_block.build((x_shape, s_shape))
         self.ffn1.build(V_shape)
         self.ffn2.build(V_shape)
-        super(AttentionWrapper, self).build(input_shape)
+        super(Encoder, self).build(input_shape)
 
     def call(self, V, K, s, x) -> tf.Tensor:
         """
@@ -307,7 +308,7 @@ class Decoder(Model):
         self.FFN_1 = FFN_j(hidden_dim)
         self.FFN_3, self.FFN_4 = FFN_j(hidden_dim), FFN_j(hidden_dim)
         self.layer_norm = LayerNormalization()
-        self.lstm_model = tf.keras.layers.LSTM(hidden_dim, return_sequences=True)
+        self.lstm_model = LSTM(hidden_dim, return_sequences=True)
         self.FFN_2 = FFN(hidden_dim, hidden_dim, encoding_size)
         self.fcn = Dense(units=2)
         self.PTP = FFN_j(1)
@@ -352,7 +353,7 @@ class Decoder(Model):
         a = self.layer_norm(outputs + x_)
         result = self.layer_norm(self.FFN_2(a, s) + a)
         properties = self.fcn(result)
-        positions = self.PTP(properties)
+        positions = tanh(self.PTP(properties))
         return properties, positions
 
 
@@ -376,7 +377,7 @@ class ModelWrapper(Model):
         self.K_encoder = BaselineNeuralForecaster(
             sequence_length, hidden_dim, encoding_size
         )
-        self.attention_mod = AttentionWrapper(
+        self.encoder = Encoder(
             hidden_dim, num_heads, sequence_length, encoding_size
         )
         self.decoder = Decoder(sequence_length, hidden_dim, encoding_size)
@@ -390,9 +391,9 @@ class ModelWrapper(Model):
         """
         x_shape, s_shape = input_shape
         inter_dimensions = (x_shape[0], (x_shape[1]), self.hidden_dim)
-        self.V_encoder.build(((x_shape[0], x_shape[1], self.info_seq_length), s_shape))
+        self.V_encoder.build(((x_shape[0], x_shape[1], x_shape[2] + 1), s_shape))
         self.K_encoder.build((x_shape, s_shape))
-        self.attention_mod.build((inter_dimensions, inter_dimensions, x_shape, s_shape))
+        self.encoder.build((inter_dimensions, inter_dimensions, x_shape, s_shape))
         self.decoder.build((x_shape, s_shape))
         super(ModelWrapper, self).build(input_shape)
 
@@ -409,10 +410,13 @@ class ModelWrapper(Model):
 
         Returns:
             properties: 一个长度为2的tuple, 分别为明日收益率的期望和标准差
-            positions: 明日持仓
+            positions: 每一个时间点的下一天持仓
         """
         V = self.V_encoder(x_c_r, s_c)
         K = self.K_encoder(x_c, s_c)
-        y = self.attention_mod(V, K, s, x)
+        y = self.encoder(V, K, s, x)
         properties, positions = self.decoder(x, s, y)
+        properties = tf.cast(properties, tf.float64)
+        positions = tf.cast(tf.squeeze(positions, axis=-1), tf.float64)
+        
         return properties, positions

@@ -43,10 +43,10 @@ def process_data_list(
         try:
             data = generate_features(data, macd_timescales, rtn_timescales)
         except:
-            print(f"{side_info} 中含有空值，其中的数据没有录入列表")
+            print(f"{side_info} 中含有空值, 其中的数据没有录入列表")
             continue
         if test:
-            data = data.iloc[:64, :]
+            data = data.iloc[:256, :]
         data_list.append(data)
     return data_list
 
@@ -139,7 +139,7 @@ def generate_tensors(
     side_info = []
     rtn_next_day = []
     std = []
-    for data in data_list:
+    for data in tqdm(data_list, desc="生成张量, 并对类别信息进行on-hot 编码"):
         data["date"] = pd.to_datetime(data["date"]).dt.strftime("%Y-%m-%d")
         feature_cols = data.columns.to_list()
         for col in ("date", "sigma", "side_info", "rtn_next_day", "close", "rtn"):
@@ -170,10 +170,8 @@ def generate_tensors(
         ]
         dates = dates + [seq["date"].values[-1] for seq in sequences]
         side_info = side_info + [seq["side_info"].values[-1] for seq in sequences]
-        rtn_next_day = rtn_next_day + [
-            seq["rtn_next_day"].values[-1] for seq in sequences
-        ]
-        std = std + [seq["sigma"].values[-1] for seq in sequences]
+        rtn_next_day = rtn_next_day + [seq["rtn_next_day"].values for seq in sequences]
+        std = std + [seq["sigma"].values for seq in sequences]
 
     feature_sequences = np.array(feature_sequences)
     dates = np.array(dates)
@@ -201,7 +199,7 @@ def generate_tensors(
         )
     return (
         (feature_sequences_tensor, dates_tensor, side_info_tensor),
-        (rtn_next_day, std)
+        (rtn_next_day, std),
     )
 
 
@@ -244,29 +242,32 @@ def data_binder(
     context_set: tuple[tf.Tensor],
     target_set: tuple[tf.Tensor],
     labels: tuple[np.array],
-    return_dates: bool = False,
+    batch_size: int,
 ):
     """
-    绑定上下文和目标数据集，并匹配相应的标签和日期。
+    将上下文数据和目标数据绑定在一起, 并生成一个TensorFlow数据集。
 
     Args:
-        context_set (tuple[tf.Tensor]): 包含上下文特征、上下文日期和辅助信息的元组。
-        target_set (tuple[tf.Tensor]): 包含目标特征、目标日期和目标信息的元组。
-        labels (tuple[np.array]): 包含均值和标准差的标签元组。
-        return_dates (bool): 是否返回日期信息。
+        context_set (tuple[tf.Tensor]): 上下文数据集, 包括特征、日期和辅助信息。
+        target_set (tuple[tf.Tensor]): 目标数据集, 包括特征、日期和信息。
+        labels (tuple[np.array]): 目标数据的标签, 包括收益率和标准差。
+        batch_size (int): 批处理大小。
 
     Returns:
-        tuple: 包含上下文特征、目标特征、标签和（可选）日期的元组。
+        tf.data.Dataset: 生成的TensorFlow数据集。
     """
     target_features, target_dates, target_info = target_set
     context_features, context_dates, side_info = context_set
     rtn_set, std_set = labels
 
     def date_to_int(date):
-        date_int = tf.strings.to_number(
-            tf.strings.regex_replace(date, "-", ""), tf.int32
-        )
-        return date_int
+        """
+        Args:
+            date (tf.Tensor): 日期字符串张量。
+        Returns:
+            tf.Tensor: 转换后的整数日期张量。
+        """
+        return tf.strings.to_number(tf.strings.regex_replace(date, "-", ""), tf.int64)
 
     def find_matching_context(
         target_date, target_info, context_dates, context_features, side_info
@@ -312,7 +313,7 @@ def data_binder(
     matched_target_features = []
     matched_target_dates = []
     matched_target_info = []
-    target_distribution = []
+    target_labels = []
 
     for i in tqdm(range(len(target_dates)), desc="处理日期中.."):
         target_date = target_dates[i]
@@ -331,22 +332,63 @@ def data_binder(
             matched_target_features.append(target_feature)
             matched_target_dates.append(target_date)
             matched_target_info.append(target_inf)
-            target_distribution.append((rtn, std))
+            target_labels.append((rtn, std))
 
     if not matched_context_features:
         matched_context_features = tf.constant([])
         matched_context_dates = tf.constant([])
         matched_side_info = tf.constant([])
-        raise ValueError("数据集中没有课配对的数据")
+        raise ValueError("数据集中没有可配对的数据")
 
     x_c_rtn = tf.stack(matched_context_features)
     x_c = x_c_rtn[:, :, 1:]
     s_c = tf.stack(matched_side_info)
     x = tf.stack(matched_target_features)
-    s = tf.stack(matched_side_info)
-    mean_std = tf.stack(target_distribution)
+    s = tf.stack(matched_target_info)
+    rtn_std = tf.stack(target_labels)
     x_c_date = tf.stack(matched_context_dates)
-    x_dates = tf.stack(matched_context_dates)
-    if return_dates:
-        return (x_c, x_c_rtn, s_c), (x, s), mean_std, (x_c_date, x_dates)
-    return (x_c, x_c_rtn, s_c), (x, s), mean_std
+    x_dates = tf.stack(matched_target_dates)
+    dataset = tf.data.Dataset.from_tensor_slices(
+        (x_c, x_c_rtn, s_c, x, s, rtn_std, x_c_date, x_dates)
+    )
+
+    def filter_batch(dataset, batch_size):
+        """
+        过滤掉批处理大小不符合要求的数据。
+
+        Args:
+            dataset (tf.data.Dataset): 原始数据集。
+            batch_size (int): 批处理大小。
+
+        Returns:
+            tf.data.Dataset: 过滤后的数据集。
+        """
+        batched_dataset = dataset.batch(batch_size)
+        return batched_dataset.filter(
+            lambda x_c, x_c_rtn, s_c, x, s, rtn_std, x_c_date, x_dates: tf.shape(x_c)[
+                0
+            ]
+            == batch_size
+        )
+
+    def key_func(x_c, x_c_rtn, s_c, x, s, rtn_std, x_c_date, x_dates):
+        """
+        获取用于分组的键。
+        """
+        return date_to_int(x_dates)
+
+    def reduce_func(key, dataset):
+        """
+        进行分组后的归约操作。
+        """
+        return filter_batch(dataset, batch_size)
+
+    dataset = dataset.group_by_window(
+        key_func=key_func, reduce_func=reduce_func, window_size=batch_size
+    )
+
+    return dataset
+
+    # if return_dates:
+    #         return (x_c, x_c_rtn, s_c), (x, s), rtn_std, (x_c_date, x_dates)
+    # return (x_c, x_c_rtn, s_c), (x, s), rtn_std
