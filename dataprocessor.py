@@ -178,7 +178,7 @@ def generate_tensors(
     side_info = np.array(side_info)
     rtn_next_day = np.array(rtn_next_day)
     std = np.array(std)
-
+    
     feature_sequences_tensor = tf.convert_to_tensor(feature_sequences, dtype=tf.float32)
     dates_tensor = tf.convert_to_tensor(dates, dtype=tf.string)
     side_info_tensor = tf.convert_to_tensor(side_info, dtype=tf.string)
