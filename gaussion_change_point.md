@@ -1,8 +1,55 @@
 # CHANGE POINT DETECTION USING GAUSSIAN PROCESSES
 
-change_point_detection,pdf 详细描述了如何使用高斯过程（Gaussian Processes, GP）进行变点检测。以下是该方法的要点解读：
+## 高斯过程变点分割 Gaussian Process Change Point Segmentation
+
+### **数据准备**
+
+价格序列 $p(i)_{1:T}$,
+
+变点检测 (CPD) 回看窗口 LBW $l_{\text{lbw}}$, 文中设置为21
+
+变点检测评价 (CPD) 阈值 $\nu$, min. 用来判断优化值是否为变点
+
+片段最大长度 $l_{\max}$ 限制每个片段的最大长度，确保在长时间段内能够检测到潜在的变点，即使市场状态在此期间可能发生变化。
+
+片段最大长度和变点评价阈值配对为：$\{(21, 0.9), (63, 0.95)\}$
+
+片段最小长度 $l_{\min}$, 限制每个片段的最小长度。 确保检测到的变点所形成的片段具有足够的长度，避免将非常短的片段误认为是有效的市场状态或模式。文中设置为5
+
+### 结果
+
+价格序列片段 $\{ p(i)_{t0:t1} \}_{(t0,t1) \in R}$，每个是一个价格序列
+
+### 具体流程
+
+1. **初始化**: $t \leftarrow T$, $t1 \leftarrow T$, regimes $R \leftarrow \emptyset$;
+2. **while** $t \geq 0$ **do**
+   1. 使用 Matérn 3/2 kernel 在 $p_{-l_{\text{lbw}}:t}$ 拟合高斯过程 (GP)，并计算 marginal likelihood,$L_M$;
+   2. 使用变点核 Change-point kernel 在 $p_{-l_{\text{lbw}}:t}$ 拟合变点高斯过程， 并 marginal likelihood, $L_C$ 以及优化后的变点位置 hyperparameter $t_{\text{CPD}}$;
+   3. **if** $\frac{L_C}{L_M + L_C} \geq \nu$ **then**
+      1. $t0 \leftarrow \lceil t_{\text{CPD}} \rceil$;
+      2. **if** $t1 - t0 \geq l_{\min}$ **then**
+         1. $R \leftarrow R \cup \{(t0, t1)\}$; // 把窗口添加到集合中
+      3. **end if**
+      4. $t \leftarrow \lfloor t_{\text{CPD}} \rfloor - 1$;  // 把窗口移动到变点之前
+      5. $t1 \leftarrow t$;
+   4. **else**
+      1. $t \leftarrow t - 1$;
+      2. **if** $t1 - t > l_{\max}$ **then**
+         1. $t \leftarrow t1 - l_{\max}$;
+      3. **end if**
+      4. **if** $t1 - t = l_{\max}$ **then**
+         1. $R \leftarrow R \cup \{(t, t1)\}$;
+         2. $t1 \leftarrow t$;
+      5. **end if**
+   5. **end if**
+3. **end while**
+
+**注**：一个典型的选择可能是 Ornstein–Uhlenbeck 过程，即 Matérn 核 1/2 核。为了与参考工作 [4] 一致，我们使用 Matérn 3/2 核。
 
 ## 变点检测原理
+
+change_point_detection,pdf 详细描述了如何使用高斯过程（Gaussian Processes, GP）进行变点检测。以下是该方法的要点解读：
 
 ### 背景与数据处理
 
@@ -21,7 +68,7 @@ change_point_detection,pdf 详细描述了如何使用高斯过程（Gaussian Pr
 
 ### 核函数选择
 
-1. **Matérn 3/2 核函数**：对于噪声较大且不光滑的金融数据，Matérn 3/2 核函数是一种良好的选择。其定义为 $k(x, x') = \sigma_h^2 \left(1 + \frac{\sqrt{3}|x - x'|}{\rho}\right) \exp\left(-\frac{\sqrt{3}|x - x'|}{\rho}\right)$。
+   **Matérn 3/2 核函数**：对于噪声较大且不光滑的金融数据，Matérn 3/2 核函数是一种良好的选择。其定义为 $k(x, x') = \sigma_h^2 \left(1 + \frac{\sqrt{3}|x - x'|}{\rho}\right) \exp\left(-\frac{\sqrt{3}|x - x'|}{\rho}\right)$。在代码实现中，可以直接使用 `gpflow.kernels.Matern32()`
 
 ### 变点检测
 
@@ -34,13 +81,15 @@ change_point_detection,pdf 详细描述了如何使用高斯过程（Gaussian Pr
    k_C(x, x') = k_1(x, x') \sigma(x) \sigma(x') + k_2(x, x') (1 - \sigma(x)) (1 - \sigma(x'))
    $$
 
+    文中的核函数可以变点核函数通过 `gpflow.kernel.change_point` 构建。
+
 ### 优化与应用
 
 1. **参数优化**：通过最大化边际似然估计（Type II maximum likelihood）优化 GP 参数，使用 GPflow 框架和 L-BFGS-B 算法。
 
-2. **变点评分**：通过引入变点核函数的超参数，计算负对数边际似然的减少量，衡量数据的非平衡程度。变点评分 $\gamma_t^{(i)}$ 计算如下：
+2. **变点评分**：通过引入变点核函数的超参数，计算负对数边际似然 **nlml** (Negative Log Marginal Likelihood) 的减少量，衡量数据的非平衡程度。变点评分 $\nu_t^{(i)}$ 计算如下：
    $$
-   \gamma_t^{(i)} = \frac{1}{1 + \exp\left(-(\text{nlml}_C - \text{nlml}_M)\right)}
+   \nu_t^{(i)} = \frac{1}{1 + \exp\left(-(\text{nlml}_{\xi_C} - \text{nlml}_{\xi_M})\right)}
    $$
    其中 $\text{nlml}_C$ 和 $\text{nlml}_M$ 分别为包含和不包含变点核函数的负对数边际似然。，表达式如下
 
@@ -52,47 +101,3 @@ change_point_detection,pdf 详细描述了如何使用高斯过程（Gaussian Pr
    其中 $K$ 是核计算出的协方差矩阵。$\sigma_n^2$ 是噪声方差。$I$ 是单位矩阵。
 
 此方法通过高斯过程回归和特定的核函数选择，有效检测金融时间序列中的变点，并评估其对市场变化的影响。
-
-## GPflow 自定义Kernal
-
-### 基础概念
-
-GPflow是一个基于TensorFlow的高斯过程（Gaussian Process）库，主要用于构建和优化高斯过程模型。它提供了灵活且强大的工具，用于处理机器学习中的非参数贝叶斯方法。高斯过程是一种用于回归和分类任务的统计模型，可以提供预测的置信度估计。
-
-Kernel（核函数）：核函数是高斯过程的关键组件，它定义了数据点之间的相似性。不同的核函数可以捕捉不同的信号特征。常见的核函数包括RBF核（径向基核）、Matern核、线性核等。核函数的作用是计算两个输入数据点之间的相似度，从而影响高斯过程的协方差矩阵。
-
-Model（模型）：模型是高斯过程的具体实现，它将核函数与数据结合起来，进行训练和预测。在GPflow中，常见的模型包括gpflow.models.GPR（高斯过程回归）和gpflow.models.SVGP（稀疏变分高斯过程）。模型利用核函数计算训练数据的协方差矩阵，然后通过最大化对数似然或变分下界等方法进行参数优化。
-
-### 自定义核用来Chang point Detection
-
-接下来，我们通过继承基类`gpflow.kernels.Kernel`来创建一个新的布朗运动核类，并实现以下三个函数：
-
-1. **\__init__**：构造函数。在这个简单的例子中，构造函数不需要参数（尽管可以方便地传入初始值，例如方差）。它必须用适当的参数调用父类的构造函数。布朗运动只在一维空间中定义，为了简化假设活跃维度为[0]。
-
-    我们使用了`Parameter`类来添加一个参数。使用这个类可以在计算核函数时使用该参数，并且该参数会自动被识别用于优化（或MCMC）。在这里，方差参数初始化为1，并被约束为正值。
-
-2. **K**：这是实现核函数的地方。它接收两个参数，X和X2。按照惯例，我们使第二个参数可选（默认为None）。
-
-    在K函数内部，所有的计算必须使用TensorFlow。在这里我们使用了`tf.minimum`。当GPflow执行K函数时，X和X2将是TensorFlow张量，而参数如`self.variance`也表现得像TensorFlow张量。
-
-3. **K_diag**：这个便捷函数允许GPflow在预测时节省内存。它只是K函数的对角线，在X2为None的情况下。它必须返回一个一维向量，所以我们使用TensorFlow的reshape命令。
-
-以下是具体实现代码：
-
-```python
-class Brownian(gpflow.kernels.Kernel):
-    def __init__(self):
-        super().__init__()
-        self.variance = gpflow.Parameter(1.0, transform=positive())
-        
-    def K(self, X, X2=None):
-        if X2 is None:
-            X2 = X
-        return self.variance * tf.minimum(X, tf.transpose(X2))
-    
-    def K_diag(self, X):
-        return tf.reshape(self.variance * X, [-1])
-```
-
-这个代码创建了一个新的布朗运动核类，具有一个可优化的方差参数，并且实现了核矩阵的计算函数和对角线计算函数。这样，我们就可以在GPflow中使用这个新的核函数来构建高斯过程模型了。
-
