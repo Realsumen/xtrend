@@ -289,6 +289,11 @@ class Encoder(tf.keras.layers.Layer):
         """
         q = self.temporal_block(x, s)
         V_ = self.ffn1(self.self_attention(V, V, V))
+        if K.shape != q.shape:
+            K =  tf.expand_dims(tf.transpose(K, perm=[1, 0, 2]), axis=0)
+            V_ =  tf.expand_dims(tf.transpose(V_, perm=[1, 0, 2]), axis=0)
+            K = tf.tile(K[:, -1, :, :], multiples=[q.shape[0], 1, 1])
+            V_ = tf.tile(V_[:, -1, :, :], multiples=[q.shape[0], 1, 1])
         attn_output = self.cross_attention(q, K, V_)
         output = self.layer_norm(self.ffn2(attn_output))
         return output

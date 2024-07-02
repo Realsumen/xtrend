@@ -96,6 +96,8 @@ def get_segment_points(
             if t_1 - t == l_max:
                 R.append((t, t_1))
                 t_1 = t
+        if t % 100 == 0:
+            print(t)
     R.append((0, R[-1][0] - 1))
     R = list(reversed(R))
     return R
