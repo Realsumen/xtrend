@@ -35,9 +35,9 @@
 
 **$x$**: 一个趋势序列， $\sigma_t^{(i)}$ 是之前60天的 exponentially weighted moving standard deviation of returns
 
-$$\hat{r}^{(i)}_{t-t',t} = r^{(i)}_{t-t',t} / \sigma^{(i)}_t \sqrt{t'}$$
+ $$\hat{r}^{(i)}_{t-t',t} = r^{(i)}_{t-t',t} / \sigma^{(i)}_t \sqrt{t'}$$
 
-$$\mathbf{x}^{(i)}_t = \text{Concat} \left( [\hat{r}^{(i)}_{t-t',t} \mid t' \in \{1, 21, 63, 126, 252\}], [\text{MACD} (p^{(i)}_{1:t}, S, L) \mid \forall (S, L)] \right).$$
+ $$\mathbf{x}^{(i)}_t = \text{Concat} \left( [\hat{r}^{(i)}_{t-t',t} \mid t' \in \{1, 21, 63, 126, 252\}], [\text{MACD} (p^{(i)}_{1:t}, S, L) \mid \forall (S, L)] \right).$$
 
 ## Step-by-Step Walk Through
 
