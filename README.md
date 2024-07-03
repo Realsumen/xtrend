@@ -13,9 +13,9 @@
 
 4. **最大化投资组合收益**：
    模型的目标是选择持仓 $z^i_t$，即每个资产t时刻的次日持仓，以最大化投资组合的收益
-   $$ R_{Port. t+1} = \frac{1}{N} \sum_{i=1}^N R^i_{t+1} $$
+   $$R_{Port. t+1} = \frac{1}{N} \sum_{i=1}^N R^i_{t+1}$$
    其中，
-   $$ R^i_{t+1} = z^i_t \frac{\sigma_{tgt}}{\sigma^i_t} r^i_{t+1} - C^i \sigma_{tgt} \left| \frac{z^i_t}{\sigma^i_t} - \frac{z^i_{t-1}}{\sigma^i_{t-1}} \right| $$
+   $$R^i_{t+1} = z^i_t \frac{\sigma_{tgt}}{\sigma^i_t} r^i_{t+1} - C^i \sigma_{tgt} \left| \frac{z^i_t}{\sigma^i_t} - \frac{z^i_{t-1}}{\sigma^i_{t-1}} \right|$$
 
    - $R_{Port. t+1}$ 表示第 $t+1$ 日的投资组合收益。
    - $R^i_{t+1}$ 表示第 $t+1$ 日第 $i$ 个资产的收益。
