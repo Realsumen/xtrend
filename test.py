@@ -2,16 +2,16 @@ import tensorflow as tf
 import importlib
 import os
 import pickle
-from models import *
+from xtrend.models_do_not_use import *
 from dataprocessor import *
 from tqdm import tqdm
 from change_point_detection import *
 def reload_custom_libs():
     import loss_functions
-    import models
+    import xtrend.models_do_not_use as models_do_not_use
     import dataprocessor
     importlib.reload(loss_functions)
-    importlib.reload(models)
+    importlib.reload(models_do_not_use)
     importlib.reload(dataprocessor)
 
 

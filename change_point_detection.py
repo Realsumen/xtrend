@@ -50,7 +50,7 @@ def get_segment_points(
         k1 = gpflow.kernels.Matern32()
         k2 = gpflow.kernels.Matern32()
 
-        # 初始化一个高斯变点模型
+        # 初始化，拟合一个高斯变点模型
         changepoint_kernel = gpflow.kernels.ChangePoints(
             [k1, k2], locations=[location], steepness=steepness
         )
@@ -63,7 +63,7 @@ def get_segment_points(
         )
         nlml_C = gpr_model_base.training_loss().numpy()
 
-        # 初始化一个高斯过程模型
+        # 初始化，拟合一个高斯过程模型
         kernel = gpflow.kernels.Matern32()
         model = gpflow.models.GPR(data=(x, y), kernel=kernel, mean_function=None)
         optimizer = gpflow.optimizers.Scipy()
@@ -113,3 +113,5 @@ def get_segment_list(data_list: list[pd.DataFrame]):
         segment_list = get_segment_points(target, l_max=63, mu=0.999)
         segment_list = [data.iloc[start : end, :] for start, end in segment_list]
         gaussion_process_list.extend(segment_list)
+    
+    return gaussion_process_list
