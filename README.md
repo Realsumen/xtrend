@@ -35,13 +35,9 @@
 
 **$x$**: 一个趋势序列，$\sigma_t^{(i)}$ 是之前60天的 exponentially weighted moving standard deviation of returns
 
-$$
-\hat{r}^{(i)}_{t-t',t} = r^{(i)}_{t-t',t} / \sigma^{(i)}_t \sqrt{t'},
-$$
+$$\hat{r}^{(i)}_{t-t',t} = r^{(i)}_{t-t',t} / \sigma^{(i)}_t \sqrt{t'}$$
 
-$$
-\mathbf{x}^{(i)}_t = \text{Concat} \left( [\hat{r}^{(i)}_{t-t',t} \mid t' \in \{1, 21, 63, 126, 252\}], [\text{MACD} (p^{(i)}_{1:t}, S, L) \mid \forall (S, L)] \right).
-$$
+$$\mathbf{x}^{(i)}_t = \text{Concat} \left( [\hat{r}^{(i)}_{t-t',t} \mid t' \in \{1, 21, 63, 126, 252\}], [\text{MACD} (p^{(i)}_{1:t}, S, L) \mid \forall (S, L)] \right).$$
 
 ## Step-by-Step Walk Through
 
@@ -99,20 +95,15 @@ $$
 
 联合损失函数由最大似然估计（MLE）损失和夏普比率（Sharpe Ratio）损失组成，两者的占比由一个超参数 $\alpha$ 控制。
 
-$$
-\mathcal{L}^{MLE}_{Joint}(\theta) = \alpha \mathcal{L}_{MLE}(\theta) + \mathcal{L}^{PTP_G(\cdot)}_{Sharpe}(\theta)
-$$
+$$\mathcal{L}^{MLE}_{Joint}(\theta) = \alpha \mathcal{L}_{MLE}(\theta) + \mathcal{L}^{PTP_G(\cdot)}_{Sharpe}(\theta)$$
 
 最大似然估计（MLE）：用于衡量模型预测的均值和标准差与实际观察到的收益之间的差异。具体来说，我们的模型 **XTrend** 最后输出一个长度为 $l_t$ 的时间序列，每个时间步特征数目为2。这个序列为我们的样本次日回报分布的特征值。训练时，**$t-l_t+1+warm\_up:t$** 的时间步持仓会被使用计算夏普损失，之前的时间步被舍弃。
-$$
-\mathcal{L}_{MLE}(\theta) = -\frac{1}{|\Omega|} \sum_{(t, i) \in \Omega} \log p \left( \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \middle| \mathbf{x}^{(i)}_{-l_t:t}, s^{(i)}, C \right)
-$$
+
+$$\mathcal{L}_{MLE}(\theta) = -\frac{1}{|\Omega|} \sum_{(t, i) \in \Omega} \log p \left( \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \middle| \mathbf{x}^{(i)}_{-l_t:t}, s^{(i)}, C \right)$$
 
 夏普比率（Sharpe Ratio）: 基于夏普比率的损失函数，衡量模型在风险调整后的收益表现。$\mathbf{PTP_G}$ 模块将预测的均值和标准差转换为交易头寸。具体来说，我们的模型 **XTrend** 最后输出一个长度为$l_t$的时间序列，取最后一个时间步作为下一日的持仓。训练时，**$t-l_t+1+warm\_up:t$** 的时间步持仓会被使用计算夏普损失，之前的时间步被舍弃。实际使用时，只会使用最后一个时间步的输出，作为次日的持仓预测。
 
-$$
-\mathcal{L}_{Sharpe}^{XTrend(\cdot)}(\theta) = -\sqrt{252} \frac{\text{mean}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{XTrend} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}{\text{std}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{XTrend} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}
-$$
+$$\mathcal{L}_{Sharpe}^{XTrend(\cdot)}(\theta) = -\sqrt{252} \frac{\text{mean}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{XTrend} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}{\text{std}_{\Omega} \left[ \frac{\sigma_{tgt}}{\sigma^{(i)}_t} r^{(i)}_{t+1} \text{XTrend} \left( \mathbf{x}^{(i)}_{-l_t:t} \right) \right]}$$
 
 ## 参数
 
