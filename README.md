@@ -33,7 +33,7 @@
 
 **$\xi$**: context资产的波动率scaled回报率序列
 
-**$x$**: 一个趋势序列，$\sigma_t^{(i)}$ 是之前60天的 exponentially weighted moving standard deviation of returns
+**$x$**: 一个趋势序列， $\sigma_t^{(i)}$ 是之前60天的 exponentially weighted moving standard deviation of returns
 
 $$\hat{r}^{(i)}_{t-t',t} = r^{(i)}_{t-t',t} / \sigma^{(i)}_t \sqrt{t'}$$
 
