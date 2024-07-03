@@ -57,6 +57,12 @@ $$
 
 ![encoder](assets/README/image-12.png)
 
+### 注意力机制
+
+![attention](assets/README/image-18.png)
+
+![attention](assets/README/image-19.png)
+
 ### 注意力模块1
 
 ![注意力模块](assets/README/image-13.png)

@@ -1,5 +1,7 @@
 import numpy as np
+import pandas as pd
 import gpflow
+from tqdm import tqdm
 
 lbw = 21
 l_max, mu = 21, 0.9
@@ -101,3 +103,13 @@ def get_segment_points(
     R.append((0, R[-1][0] - 1))
     R = list(reversed(R))
     return R
+
+
+def get_segment_list(data_list: list[pd.DataFrame]):
+    gaussion_process_list = []
+    for data in tqdm(data_list):
+        price_series = data["close"]
+        target = price_series.to_numpy().reshape((-1, 1))
+        segment_list = get_segment_points(target, l_max=63, mu=0.999)
+        segment_list = [data.iloc[start : end, :] for start, end in segment_list]
+        gaussion_process_list.extend(segment_list)

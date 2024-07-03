@@ -14,7 +14,7 @@ def process_data_list(
     files: list[str],
     macd_timescales: list = MACD_timescales,
     rtn_timescales: list = RTN_timescales,
-    test: bool = False,
+    test: int = None,
 ) -> list[pd.DataFrame]:
     """
     处理文件列表并生成包含特征的数据帧列表。
@@ -46,8 +46,8 @@ def process_data_list(
         except:
             print(f"{side_info} 中含有空值, 其中的数据没有录入列表")
             continue
-        if test:
-            data = data.iloc[:256, :]
+        if test is not None:
+            data = data.iloc[:test, :]
         data_list.append(data)
     return data_list
 
@@ -209,24 +209,28 @@ def generate_context_tensors(data_list: list[pd.DataFrame], method: str, **param
         result = generate_tensors(data_list, **params)
         return result
     if method == "Gaussian":
+        # 生成 context set
+        gaussion_process_list = params["gaussion_process_list"]
+        map = params["map"]
         
-        gaussion_process_list = []
-        
-        for data in tqdm(data_list):
-            price_series = data["close"]
-            target = price_series.to_numpy().reshape((-1, 1))
-            segment_list = get_segment_points(target, l_max=63, mu=0.999)
-            segment_list = [data.iloc[start : end, :] for start, end in segment_list]
-            gaussion_process_list.extend(segment_list)
-   
         feature_cols = gaussion_process_list[0].columns.to_list()
         for col in ("date", "sigma", "side_info", "close", "rtn"):
             feature_cols.remove(col)
-            
-        features = [df[feature_cols].values for df in gaussion_process_list if len(df) > 0]
-        date_list = [str(df["date"].values[-1]) for df in gaussion_process_list if len(df) > 0]
-        side_info = [df["side_info"].iloc[0] for df in gaussion_process_list if len(df) > 0]
-        rtn_next_day = [df["rtn_next_day"] for df in gaussion_process_list if len(df) > 0]
+
+        features = [
+            df[feature_cols].values for df in gaussion_process_list if len(df) > 0
+        ]
+        date_list = [
+            str(pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d").values[-1])
+            for df in gaussion_process_list
+            if len(df) > 0
+        ]
+        side_info = [
+            df["side_info"].iloc[0] for df in gaussion_process_list if len(df) > 0
+        ]
+        rtn_next_day = [
+            df["rtn_next_day"] for df in gaussion_process_list if len(df) > 0
+        ]
         std = [df["sigma"] for df in gaussion_process_list if len(df) > 0]
 
         feature_sequences_tensor = tf.ragged.constant(features, dtype=tf.float32)
@@ -236,20 +240,30 @@ def generate_context_tensors(data_list: list[pd.DataFrame], method: str, **param
         std = tf.ragged.constant(std)
 
         def pad_ragged_tensors(tensor):
-            padded = tensor.to_tensor(0.)
+            padded = tensor.to_tensor(0.0)
             return tf.reverse(padded, [-1])
 
         feature_sequences_tensor = pad_ragged_tensors(feature_sequences_tensor)
         rtn_next_day = pad_ragged_tensors(rtn_next_day)
         std = pad_ragged_tensors(std)
 
-        side_info_tensor, map = side_info_one_hot_encoder(side_info_tensor, time_steps=feature_sequences_tensor.shape[1], word_index=map, return_dict=True)
+        side_info_tensor, _ = side_info_one_hot_encoder(
+            side_info_tensor,
+            time_steps=feature_sequences_tensor.shape[1],
+            word_index=map,
+            return_dict=True,
+        )
         context_set = (feature_sequences_tensor, dates_tensor, side_info_tensor)
         return context_set
 
 
 def side_info_one_hot_encoder(
-    string_tensor: tf.Tensor, word_index: dict = None, return_dict=True, time_steps: int = None, shape_tensor=None
+    
+    string_tensor: tf.Tensor,
+    word_index: dict = None,
+    return_dict=True,
+    time_steps: int = None,
+    shape_tensor=None,
 ):
     """
     对字符串张量进行one-hot编码, 并返回one-hot编码后的三维张量及对应的映射表。
@@ -270,18 +284,19 @@ def side_info_one_hot_encoder(
     integer_encoded = [word_index.get(word, 0) for word in string_list]
     one_hot_encoded = to_categorical(integer_encoded, num_classes=len(word_index) + 1)
     one_hot_encoded_tensor = tf.convert_to_tensor(one_hot_encoded, dtype=tf.float32)
-    expanded_info = tf.expand_dims(
-        one_hot_encoded_tensor, axis=1
-    )  
+    expanded_info = tf.expand_dims(one_hot_encoded_tensor, axis=1)
     if time_steps != None:
-        if shape_tensor != None: raise ValueError("同时传入了timesteps和shape_tensor!")
+        if shape_tensor != None:
+            raise ValueError("同时传入了timesteps和shape_tensor!")
         expanded_info = tf.expand_dims(one_hot_encoded_tensor, axis=1)
         tiled_tensor = tf.tile(expanded_info, [1, time_steps, 1])
     elif shape_tensor != None:
         expanded_info = tf.repeat(one_hot_encoded_tensor, repeats=shape_tensor, axis=0)
         tiled_tensor = tf.RaggedTensor.from_row_lengths(expanded_info, shape_tensor)
     else:
-        raise ValueError("未指定时间步维度, 对于规则张量请传入时间步timespteps; 对并于不规则张量, 请传入shape_tensor")
+        raise ValueError(
+            "未指定时间步维度, 对于规则张量请传入时间步timespteps; 对并于不规则张量, 请传入shape_tensor"
+        )
     if return_dict:
         return tiled_tensor, word_index
     return tiled_tensor
@@ -295,13 +310,13 @@ def date_to_int(date):
         tf.Tensor: 转换后的整数日期张量。
     """
     return tf.strings.to_number(tf.strings.regex_replace(date, "-", ""), tf.int64)
-    
-    
+
+
 def key_func(x_c, x_c_rtn, s_c, x, s, rtn_std, x_c_date, x_dates):
-        """
-        databinder() 中，获取用于分组的键 (相同日期一组)。
-        """
-        return date_to_int(x_dates)
+    """
+    databinder() 中，获取用于分组的键 (相同日期一组)。
+    """
+    return date_to_int(x_dates)
 
 
 def find_matching_context(
@@ -320,10 +335,8 @@ def find_matching_context(
     Returns:
         tuple: 匹配的上下文特征、上下文日期和辅助信息。
     """
-    
-    mask_date = tf.math.greater(
-        date_to_int(target_date), date_to_int(context_dates)
-    )
+
+    mask_date = tf.math.greater(date_to_int(target_date), date_to_int(context_dates))
     mask_info = tf.reduce_all(
         tf.math.equal(target_info[0], side_info[:, -1, :]), axis=1
     )
@@ -441,49 +454,114 @@ def data_binder(
     return dataset
 
 
-def gaussian_data_bindercontext_set( 
-    context_set: tuple[tf.Tensor],
+def gaussian_data_binder(
+    data_list: list[pd.DataFrame],
     target_set: tuple[tf.Tensor],
     labels: tuple[np.array],
+    map: int,
+    asset_num: int,
+    context_num: int,
+    gaussion_process_list: list = None,
 ):
-    target_features, target_dates, target_info = target_set
-    context_features, context_dates, side_info = context_set
-    rtn_set, std_set = labels
-    asset_num = len(target_info[-1]) - 1
-    
-    matched_context_features = []
-    matched_context_dates = []
-    matched_side_info = []
-    matched_target_features = []
-    matched_target_dates = []
-    matched_target_info = []
-    target_labels = []
-    
-    for i in tqdm(range(len(target_dates)), desc="处理日期中.."):
-        target_date = target_dates[i]
-        target_inf = target_info[i]
-        target_feature = target_features[i]
-        rtn, std = rtn_set[i], std_set[i]
+    if gaussion_process_list is None:
+        gaussion_process_list = get_segment_list(data_list=data_list)
 
-        context_feature, context_date, side_inf = find_matching_context(
-            target_date, target_inf, context_dates, context_features, side_info
-        )
-
-        if context_feature is not None:
-            matched_context_features.append(context_feature)
-            matched_context_dates.append(context_date)
-            matched_side_info.append(side_inf)
-            matched_target_features.append(target_feature)
-            matched_target_dates.append(target_date)
-            matched_target_info.append(target_inf)
-            target_labels.append((rtn, std))
-
-    if not matched_context_features:
-        matched_context_features = tf.constant([])
-        matched_context_dates = tf.constant([])
-        matched_side_info = tf.constant([])
-        raise ValueError("数据集中没有可配对的数据")
-    
-    dataset = tf.data.Dataset.from_tensor_slices(
-        (x_c, x_c_rtn, s_c, x, s, rtn_std, x_c_date, x_dates)
+    # 生成 context set
+    context_set = generate_context_tensors(
+        data_list=data_list,
+        method="Gaussian",
+        gaussion_process_list=gaussion_process_list,
+        map = map
     )
+
+    # 把 target 绑定
+    features, dates, context = target_set
+    rtn, std = labels
+
+    unique_dates, _, counts = tf.unique_with_counts(dates)
+    twice_dates = tf.boolean_mask(unique_dates, counts == asset_num)
+
+    # Create a mapping from dates to indices
+    date_to_indices = {
+        date.numpy(): tf.where(dates == date).numpy().flatten() for date in twice_dates
+    }
+
+    # Gather features and contexts for these dates, ensuring the order is maintained
+    ordered_features, ordered_side_info, ordered_rtn_std = [], [], []
+
+    for date in twice_dates:
+        indices = date_to_indices[date.numpy()]
+        ordered_features.append(tf.gather(features, indices))
+        ordered_side_info.append(tf.gather(context, indices))
+        ordered_rtn_std.append((tf.gather(rtn, indices), tf.gather(std, indices)))
+
+    ordered_features = tf.stack(ordered_features)
+    ordered_side_info = tf.stack(ordered_side_info)
+    target_set = (ordered_features, twice_dates, ordered_side_info)
+    ordered_rtn_std = tf.transpose(tf.stack(ordered_rtn_std), perm=[0, 2, 3, 1])
+
+    # 把 context 绑定
+
+    feature_sequences_tensor = context_set[0]
+    dates_tensor = context_set[1]
+    side_info_tensor = context_set[2]
+    dates_tensor_int = [date_to_int(date) for date in dates_tensor.numpy()]
+
+    new_feature_sequences = []
+    new_side_info_sequences = []
+    binded_dates = []
+    for date in twice_dates.numpy():
+        # 找到比当前日期小的日期
+        smaller_dates_indices = tf.where(dates_tensor_int < date_to_int(date))
+        if len(smaller_dates_indices) > 0:
+            # 选择一个随机的日期
+            chosen_index = tf.random.shuffle(smaller_dates_indices)
+            chosen_index = tf.reshape(chosen_index, [-1])
+            # 提取对应的 feature 和 side_info
+            new_feature_sequences.append(
+                tf.stack(
+                    [
+                        feature_sequences_tensor[chosen_index[i]]
+                        for i in range(context_num)
+                    ]
+                )
+            )
+            new_side_info_sequences.append(
+                tf.stack(
+                    [side_info_tensor[chosen_index[i]] for i in range(context_num)]
+                )
+            )
+            binded_dates.append(date)
+
+    binded_feature_sequences_tensor = tf.stack(new_feature_sequences)
+    binded_side_info_sequences_tensor = tf.stack(new_side_info_sequences)
+    binded_dates_tensor = tf.constant(binded_dates)
+
+    context_set = (
+        binded_feature_sequences_tensor,
+        binded_dates_tensor,
+        binded_side_info_sequences_tensor,
+    )
+
+    # context 和 target 配对
+    context_dates_set = set(context_set[1].numpy())
+
+    # 筛选 target_dates 中属于 context_dates 的索引
+    indices = [
+        i for i, date in enumerate(target_set[1].numpy()) if date in context_dates_set
+    ]
+
+    # 根据已绑定的 target_set 日期索引筛选 target_set， 没绑定的直接舍弃
+    filtered_target_feature_sequences = tf.gather(target_set[0], indices)
+    filtered_target_dates = tf.gather(target_set[1], indices)
+    filtered_target_side_info = tf.gather(target_set[2], indices)
+    labels = tf.gather(ordered_rtn_std, indices)
+
+    target_set = (
+        filtered_target_feature_sequences,
+        filtered_target_dates,
+        filtered_target_side_info,
+    )
+
+    return target_set, context_set, labels
+
