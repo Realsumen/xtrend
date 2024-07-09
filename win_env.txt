@@ -1,13 +1,17 @@
 absl-py==2.1.0
-appnope @ file:///home/conda/feedstock_root/build_artifacts/appnope_1707233003401/work
 asttokens @ file:///home/conda/feedstock_root/build_artifacts/asttokens_1698341106958/work
 astunparse==1.6.3
+blinker==1.8.2
 certifi==2024.6.2
 charset-normalizer==3.3.2
 check-shapes==1.1.1
+click==8.1.7
 cloudpickle==3.0.0
+colorama @ file:///home/conda/feedstock_root/build_artifacts/colorama_1666700638685/work
 comm @ file:///home/conda/feedstock_root/build_artifacts/comm_1710320294760/work
-debugpy @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_563_nwtkoc/croot/debugpy_1690905063850/work
+contourpy==1.2.1
+cycler==0.12.1
+debugpy @ file:///D:/bld/debugpy_1707444544473/work
 decorator @ file:///home/conda/feedstock_root/build_artifacts/decorator_1641555617451/work
 Deprecated==1.2.14
 dm-tree==0.1.8
@@ -15,25 +19,32 @@ dropstackframe==0.1.0
 et-xmlfile==1.1.0
 exceptiongroup @ file:///home/conda/feedstock_root/build_artifacts/exceptiongroup_1704921103267/work
 executing @ file:///home/conda/feedstock_root/build_artifacts/executing_1698579936712/work
+Flask==3.0.3
 flatbuffers==24.3.25
+fonttools==4.53.0
 gast==0.5.4
 google-pasta==0.2.0
 gpflow==2.9.2
 grpcio==1.64.1
 h5py==3.11.0
+heartrate==0.2.2
 idna==3.7
 importlib_metadata @ file:///home/conda/feedstock_root/build_artifacts/importlib-metadata_1710971335535/work
-ipykernel @ file:///Users/runner/miniforge3/conda-bld/ipykernel_1717717537056/work
-ipython @ file:///home/conda/feedstock_root/build_artifacts/ipython_1717182742060/work
+ipykernel @ file:///D:/bld/ipykernel_1717717683217/work
+ipython @ file:///D:/bld/ipython_1717182928131/work
+itsdangerous==2.2.0
 jedi @ file:///home/conda/feedstock_root/build_artifacts/jedi_1696326070614/work
+Jinja2==3.1.4
 jupyter_client @ file:///home/conda/feedstock_root/build_artifacts/jupyter_client_1716472197302/work
-jupyter_core @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_782yoyc_98/croot/jupyter_core_1698937318631/work
+jupyter_core @ file:///D:/bld/jupyter_core_1710257313664/work
 keras==3.3.3
+kiwisolver==1.4.5
 lark==1.1.9
 libclang==18.1.1
 Markdown==3.6
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
+matplotlib==3.9.0
 matplotlib-inline @ file:///home/conda/feedstock_root/build_artifacts/matplotlib-inline_1713250518406/work
 mdurl==0.1.2
 ml-dtypes==0.3.2
@@ -41,24 +52,27 @@ multipledispatch==1.0.0
 namex==0.0.8
 nest_asyncio @ file:///home/conda/feedstock_root/build_artifacts/nest-asyncio_1705850609492/work
 numpy==1.26.4
-openpyxl==3.1.4
+objprint==0.2.3
+openpyxl @ file:///C:/b/abs_764brjadj1/croot/openpyxl_1714158895873/work
 opt-einsum==3.3.0
 optree==0.11.0
 packaging @ file:///home/conda/feedstock_root/build_artifacts/packaging_1718189413536/work
 pandas==2.2.2
 parso @ file:///home/conda/feedstock_root/build_artifacts/parso_1712320355065/work
-pexpect @ file:///home/conda/feedstock_root/build_artifacts/pexpect_1706113125309/work
 pickleshare @ file:///home/conda/feedstock_root/build_artifacts/pickleshare_1602536217715/work
+pillow==10.3.0
 platformdirs @ file:///home/conda/feedstock_root/build_artifacts/platformdirs_1715777629804/work
+polars==0.20.31
 prompt_toolkit @ file:///home/conda/feedstock_root/build_artifacts/prompt-toolkit_1718047967974/work
 protobuf==4.25.3
-psutil @ file:///Users/cbousseau/work/recipes/ci_py311_2/psutil_1678995687212/work
-ptyprocess @ file:///home/conda/feedstock_root/build_artifacts/ptyprocess_1609419310487/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl
+psutil @ file:///D:/bld/psutil_1705722591889/work
 pure-eval @ file:///home/conda/feedstock_root/build_artifacts/pure_eval_1642875951954/work
 Pygments @ file:///home/conda/feedstock_root/build_artifacts/pygments_1714846767233/work
+pyparsing==3.1.2
 python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/python-dateutil_1709299778482/work
 pytz==2024.1
-pyzmq @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_43pxpbos3z/croot/pyzmq_1705605108344/work
+pywin32==306
+pyzmq @ file:///D:/bld/pyzmq_1715024524369/work
 requests==2.32.3
 rich==13.7.1
 scipy==1.14.0
@@ -68,12 +82,12 @@ tabulate==0.9.0
 tensorboard==2.16.2
 tensorboard-data-server==0.7.2
 tensorflow==2.16.1
-tensorflow-io-gcs-filesystem==0.37.0
-tensorflow-macos==2.16.1
+tensorflow-intel==2.16.1
+tensorflow-io-gcs-filesystem==0.31.0
 tensorflow-probability==0.24.0
 termcolor==2.4.0
 tf_keras==2.16.0
-tornado @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_a4w03z48br/croot/tornado_1718740114858/work
+tornado @ file:///D:/bld/tornado_1717722835987/work
 tqdm==4.66.4
 traitlets @ file:///home/conda/feedstock_root/build_artifacts/traitlets_1713535121073/work
 typing_extensions @ file:///home/conda/feedstock_root/build_artifacts/typing_extensions_1717802530399/work

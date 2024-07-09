@@ -96,8 +96,8 @@ class FFN(Model):
         """前向传播方法。
 
         Args:
-            h_t (tf.Tensor): 隐状态张量，形状为 [batch_size, time_steps, feature_dim]
-            s (tf.Tensor): 侧信息张量，形状为 [batch_size, time_steps, feature_dim]
+            h_t (tf.Tensor): 隐状态张量，形状为 [batch_size, asset_types, time_steps, feature_dim]
+            s (tf.Tensor): 侧信息张量，形状为 [batch_size, asset_types, time_steps, feature_dim]
 
         Returns:
             tf.Tensor: 输出张量的维度与隐藏层相等
@@ -227,8 +227,8 @@ class BaselineNeuralForecaster(Model):
         """前向传播方法。
 
         Args:
-            x (tf.Tensor): 输入的样本，形状为 [batch_size, time_steps, feature_dim]
-            s (tf.Tensor): side information 的输入张量，形状为 [batch_size, time_steps, feature_dim]
+            x (tf.Tensor): 输入的样本，形状为 [batch_size, asset_types, time_steps, feature_dim]
+            s (tf.Tensor): side information 的输入张量，形状为 [batch_size, asset_types, time_steps, feature_dim]
 
         Returns:
             tf.Tensor: 输出张量的维度与隐藏层相等。
@@ -394,7 +394,7 @@ class ModelWrapper(Model):
         初始化 ModelWrapper 类。
 
         Args:
-            sequence_length (int): 序列长度。
+            sequence_length (int): 特征序列长度。
             hidden_dim (int): 隐藏层维度。
             encoding_size (int): 编码大小。
             num_heads (int): 多头注意力的头数。

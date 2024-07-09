@@ -1,3 +1,5 @@
+import os
+from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -10,6 +12,38 @@ MACD_timescales = [(8, 24), (16, 28), (32, 96)]
 RTN_timescales = [1, 21, 63, 126, 252]
 
 
+def process_file(args):
+    file, macd_timescales, rtn_timescales, test = args
+    
+    # 判断文件的类型，进行处理
+    if file.endswith("xlsx"):
+        data = pd.read_excel(f"data/{file}")[["日期", "收盘价(元)"]]
+        side_info = file.replace(".xlsx", "")
+    elif file.endswith("parquet"):
+        data = pd.read_parquet(f"data/{file}")[["日期", "收盘价(元)"]]
+        side_info = file.replace(".parquet", "")
+    elif file.endswith("csv"):
+        data = pd.read_csv(f"data/{file}")[["日期", "收盘价(元)"]]
+        side_info = file.replace(".csv", "")
+    
+    data = data.rename(columns={"日期": "date", "收盘价(元)": "close"}).sort_values("date")
+    data["side_info"] = side_info
+    try:
+        data = generate_features(data, macd_timescales, rtn_timescales)
+    except:
+        print(f"{side_info} 中含有空值, 其中的数据没有录入列表")
+        return None
+    if test is not None:
+        # 如果 test 不为空的话，分段生成变点数据帧
+        if len(data) < test[0]:
+            data =  None
+        elif len(data) > test[0] and len(data) < test[1]:
+            data = data.iloc[test[0]:, :]
+        else:
+            data = data.iloc[test[0]:test[1], :]
+    return data
+
+
 def process_data_list(
     files: list[str],
     macd_timescales: list = MACD_timescales,
@@ -19,36 +53,23 @@ def process_data_list(
     """
     处理文件列表并生成包含特征的数据帧列表。
 
-    Args:
-        files (list[str]): 文件路径列表。
+    args:
+        files (list[str]): 文件路径的列表。
+        macd_timescales (list, optional): MACD的时间尺度列表。默认为MACD_timescales。
+        rtn_timescales (list, optional): 回报率的时间尺度列表。默认为RTN_timescales。
+        test (int, optional): 测试参数/分段进行变点检测, 默认为None。
 
-    Returns:
-        list[pd.DataFrame]: 包含处理后数据的数据帧列表。
+    return:
+        list[pd.DataFrame]: 包含处理后数据的数据帧列表, 每个数据帧是一个资产的一个无变点片段
     """
     data_list = []
-    for file in tqdm(files, desc="处理文件中。。"):
-        if file.endswith("xlsx"):
-            data = pd.read_excel(f"data/{file}")[["日期", "收盘价(元)"]]
-            side_info = file.replace(".xlsx", "")
-        elif file.endswith("parquet"):
-            data = pd.read_parquet(f"data/{file}")[["日期", "收盘价(元)"]]
-            side_info = file.replace(".parquet", "")
-        elif file.endswith("csv"):
-            data = pd.read_csv(f"data/{file}")[["日期", "收盘价(元)"]]
-            side_info = file.replace(".csv", "")
-
-        data = data.rename(columns={"日期": "date", "收盘价(元)": "close"}).sort_values(
-            "date"
-        )
-        data["side_info"] = side_info
-        try:
-            data = generate_features(data, macd_timescales, rtn_timescales)
-        except:
-            print(f"{side_info} 中含有空值, 其中的数据没有录入列表")
-            continue
-        if test is not None:
-            data = data.iloc[:test, :]
-        data_list.append(data)
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+        futures = [executor.submit(process_file, (file, macd_timescales, rtn_timescales, test)) for file in files]
+        for future in futures:
+            result = future.result()
+            if result is not None:
+                data_list.append(result)
+    
     return data_list
 
 
@@ -88,7 +109,7 @@ def generate_features(
             ewma_s = exp(tmp_close_series, 1 / s).mean().iloc[-1]
             ewma_l = exp(tmp_close_series, 1 / l).mean().iloc[-1]
             if std == 0:
-                raise ValueError("Problem")
+                raise ValueError("多日价格相同导致标准差为0, 检查输入的收盘数据")
 
             m_t = (ewma_s - ewma_l) / std
             m.append(m_t)
@@ -107,7 +128,7 @@ def generate_features(
     for i in rtn_timscales:
         rtn = close_series / close_series.shift(i) - 1
         rtn = pd.Series(rtn.values, index=date_series.values)
-        normalized_rtn = rtn / data["sigma"] / i**0.5
+        normalized_rtn = rtn / data["sigma"] / i ** 0.5
         data[f"rtn_{i}"] = pd.Series(normalized_rtn, index=date_series)
 
     data.reset_index(inplace=True)

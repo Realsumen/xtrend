@@ -1,14 +1,15 @@
 import numpy as np
 import pandas as pd
 import gpflow
+from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
+import os
 
 lbw = 21
 l_max, mu = 21, 0.9
 l_max, mu = 63, 0.99
 l_min = 5
 steepness = 1
-
 
 def get_segment_points(
     Y: np.ndarray,
@@ -105,13 +106,20 @@ def get_segment_points(
     return R
 
 
+def process_data(data):
+    price_series = data["close"]
+    target = price_series.to_numpy().reshape((-1, 1))
+    segment_list = get_segment_points(target, l_max=63, mu=0.999)
+    segment_list = [data.iloc[start : end, :] for start, end in segment_list]
+    return segment_list
+
+
 def get_segment_list(data_list: list[pd.DataFrame]):
     gaussion_process_list = []
-    for data in tqdm(data_list):
-        price_series = data["close"]
-        target = price_series.to_numpy().reshape((-1, 1))
-        segment_list = get_segment_points(target, l_max=63, mu=0.999)
-        segment_list = [data.iloc[start : end, :] for start, end in segment_list]
-        gaussion_process_list.extend(segment_list)
+    
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+        futures = [executor.submit(process_data, data) for data in data_list]
+        for future in futures:
+            gaussion_process_list.extend(future.result())
     
     return gaussion_process_list
