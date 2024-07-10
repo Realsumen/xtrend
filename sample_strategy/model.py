@@ -4,6 +4,7 @@ from tensorflow.keras.activations import tanh
 from tensorflow.keras.layers import (
     Dense,
     ELU,
+    Dropout,
     Softmax,
     LayerNormalization,
     LSTM,
@@ -13,7 +14,7 @@ from tensorflow.keras.models import Model
 
 
 class FFN_j(Model):
-    def __init__(self, hidden_dim):
+    def __init__(self, hidden_dim, dropout_rate):
         """初始化 FFN_j 类。
 
         Args:
@@ -23,6 +24,7 @@ class FFN_j(Model):
         self.hidden_dim = hidden_dim
         self.linear_1 = Dense(units=hidden_dim)
         self.elu = ELU()
+        self.dropout = Dropout(dropout_rate)
         self.linear_3 = Dense(units=hidden_dim)
 
     def build(self, input_shape):
@@ -48,12 +50,13 @@ class FFN_j(Model):
         """
         add_output = self.linear_1(h_t)
         elu_output = self.elu(add_output)
-        output = self.linear_3(elu_output)
+        dropout_output = self.dropout(elu_output)
+        output = self.linear_3(dropout_output)
         return output
 
 
 class FFN(Model):
-    def __init__(self, sequence_length, hidden_dim, encoding_size, output_dim=None):
+    def __init__(self, sequence_length, hidden_dim, encoding_size, dropout_rate, output_dim=None):
         """初始化 FFN 类。
 
         Args:
@@ -71,6 +74,7 @@ class FFN(Model):
 
         self.linear_1 = Dense(units=hidden_dim)
         self.elu = ELU()
+        self.dropout = Dropout(dropout_rate)
         self.linear_2 = Dense(units=hidden_dim)
         self.linear_3 = Dense(units=output_dim)
 
@@ -106,12 +110,13 @@ class FFN(Model):
         linear_2_output = self.linear_2(s)
         add_output = linear_1_output + linear_2_output
         elu_output = self.elu(add_output)
-        output = self.linear_3(elu_output)
+        dropout_output = self.dropout(elu_output)
+        output = self.linear_3(dropout_output)
         return output
 
 
 class VSN(Model):
-    def __init__(self, sequence_length, hidden_dim, encoding_size=None):
+    def __init__(self, sequence_length, hidden_dim, dropout_rate, encoding_size=None):
         """初始化 VSN 类。
 
         Args:
@@ -120,10 +125,10 @@ class VSN(Model):
             encoding_size (int, optional): 资产数目长度。
         """
         super(VSN, self).__init__()
-        self.ffn = FFN(sequence_length, hidden_dim, encoding_size)
+        self.ffn = FFN(sequence_length, hidden_dim, encoding_size, dropout_rate)
         self.softmax = Softmax(axis=2)
         self.sequence_FFN = [
-            FFN_j(hidden_dim=hidden_dim) for _ in range(sequence_length)
+            FFN_j(hidden_dim, dropout_rate) for _ in range(sequence_length)
         ]
 
     def build(self, input_shape):
@@ -181,7 +186,7 @@ class VSN(Model):
 
 
 class BaselineNeuralForecaster(Model):
-    def __init__(self, sequence_length, hidden_dim, encoding_size):
+    def __init__(self, sequence_length, hidden_dim, encoding_size, dropout_rate):
         """初始化 BaselineNeuralForecaster 类。
 
         Args:
@@ -191,12 +196,12 @@ class BaselineNeuralForecaster(Model):
         """
         super(BaselineNeuralForecaster, self).__init__()
         self.hidden_dim = hidden_dim
-        self.vsn_model = VSN(sequence_length, hidden_dim, encoding_size=encoding_size)
-        self.FFN_3, self.FFN_4 = FFN_j(hidden_dim), FFN_j(hidden_dim)
+        self.vsn_model = VSN(sequence_length, hidden_dim, dropout_rate, encoding_size=encoding_size)
+        self.FFN_3, self.FFN_4 = FFN_j(hidden_dim, dropout_rate), FFN_j(hidden_dim, dropout_rate)
         self.layer_norm = LayerNormalization()
         self.lstm_model = LSTM(hidden_dim, return_sequences=True)
         self.FFN_2 = FFN(
-            sequence_length, hidden_dim, encoding_size, output_dim=hidden_dim
+            sequence_length, hidden_dim, encoding_size, dropout_rate, output_dim=hidden_dim
         )
 
     def build(self, input_shape):
@@ -250,7 +255,7 @@ class BaselineNeuralForecaster(Model):
 
 
 class Encoder(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, sequence_length, encoding_size):
+    def __init__(self, d_model, num_heads, sequence_length, encoding_size, dropout_rate):
         """
         初始化 Encoder 类。
 
@@ -264,10 +269,10 @@ class Encoder(tf.keras.layers.Layer):
         self.self_attention = MultiHeadAttention(num_heads=num_heads, key_dim=d_model)
         self.cross_attention = MultiHeadAttention(num_heads=num_heads, key_dim=d_model)
         self.temporal_block = BaselineNeuralForecaster(
-            sequence_length, d_model, encoding_size
+            sequence_length, d_model, encoding_size, dropout_rate=dropout_rate
         )
-        self.ffn1 = FFN_j(hidden_dim=d_model)
-        self.ffn2 = FFN_j(hidden_dim=d_model)
+        self.ffn1 = FFN_j(hidden_dim=d_model, dropout_rate=dropout_rate)
+        self.ffn2 = FFN_j(hidden_dim=d_model, dropout_rate=dropout_rate)
         self.layer_norm = LayerNormalization()
 
     def build(self, input_shape):
@@ -317,7 +322,7 @@ class Encoder(tf.keras.layers.Layer):
 
 
 class Decoder(Model):
-    def __init__(self, sequence_length, hidden_dim, encoding_size):
+    def __init__(self, sequence_length, hidden_dim, encoding_size, dropout_rate):
         """
         初始化 Decoder 类。
 
@@ -325,15 +330,15 @@ class Decoder(Model):
             hidden_dim (int): 隐藏层的维度。
         """
         super(Decoder, self).__init__()
-        self.vsn_model = VSN(sequence_length, hidden_dim, encoding_size=encoding_size)
+        self.vsn_model = VSN(sequence_length, hidden_dim, dropout_rate=dropout_rate, encoding_size=encoding_size)
         self.hidden_dim = hidden_dim
-        self.FFN_1 = FFN_j(hidden_dim)
-        self.FFN_3, self.FFN_4 = FFN_j(hidden_dim), FFN_j(hidden_dim)
+        self.FFN_1 = FFN_j(hidden_dim, dropout_rate)
+        self.FFN_3, self.FFN_4 = FFN_j(hidden_dim, dropout_rate), FFN_j(hidden_dim, dropout_rate)
         self.layer_norm = LayerNormalization()
         self.lstm_model = LSTM(hidden_dim, return_sequences=True)
-        self.FFN_2 = FFN(hidden_dim, hidden_dim, encoding_size)
+        self.FFN_2 = FFN(hidden_dim, hidden_dim, encoding_size, dropout_rate)
         self.fcn = Dense(units=2)
-        self.PTP = FFN_j(1)
+        self.PTP = FFN_j(1, dropout_rate)
 
     def build(self, input_shape):
         """
@@ -389,7 +394,7 @@ class Decoder(Model):
 
 
 class ModelWrapper(Model):
-    def __init__(self, sequence_length, hidden_dim, encoding_size, num_heads):
+    def __init__(self, sequence_length, hidden_dim, encoding_size, num_heads, dropout_rate):
         """
         初始化 ModelWrapper 类。
 
@@ -403,13 +408,13 @@ class ModelWrapper(Model):
         self.hidden_dim = hidden_dim
         self.info_seq_length = sequence_length + 1
         self.V_encoder = BaselineNeuralForecaster(
-            self.info_seq_length, hidden_dim, encoding_size
+            self.info_seq_length, hidden_dim, encoding_size, dropout_rate=dropout_rate
         )
         self.K_encoder = BaselineNeuralForecaster(
-            sequence_length, hidden_dim, encoding_size
+            sequence_length, hidden_dim, encoding_size, dropout_rate=dropout_rate
         )
-        self.encoder = Encoder(hidden_dim, num_heads, sequence_length, encoding_size)
-        self.decoder = Decoder(sequence_length, hidden_dim, encoding_size)
+        self.encoder = Encoder(hidden_dim, num_heads, sequence_length, encoding_size, dropout_rate=dropout_rate)
+        self.decoder = Decoder(sequence_length, hidden_dim, encoding_size, dropout_rate=dropout_rate)
 
     def build(self, input_shape):
         """

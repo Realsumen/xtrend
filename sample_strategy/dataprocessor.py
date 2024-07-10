@@ -30,8 +30,8 @@ def process_file(args):
     try:
         data = generate_features(data, macd_timescales, rtn_timescales)
     except:
-        print(f"{side_info} 中含有空值, 其中的数据没有录入列表")
-        return None
+        # 传回异常资产名称
+        return side_info
     if test is not None:
         # 如果 test 不为空的话，分段生成变点数据帧
         if len(data) < test[0]:
@@ -68,12 +68,11 @@ def process_data_list(
         for future in futures:
             result = future.result()
             if result is not None:
-                if last_date is not None:
-                    data = result.loc[result["date"] <= last_date]
-                    data_list.append(data)
-                else:
-                    data_list.append(result)
-    
+                if isinstance(result, str):
+                    print(f"{result}.csv 中含有空值, 其中的数据没有录入列表")
+                    continue
+                data = result.loc[result["date"] <= last_date]
+                data_list.append(data)
     return data_list
 
 
@@ -165,8 +164,10 @@ def generate_tensors(
     side_info = []
     rtn_next_day = []
     std = []
-    for data in tqdm(data_list, desc="生成张量, 并对类别信息进行one-hot 编码"):
-        data["date"] = data["date"].astype(np.int64)
+    for original_data  in tqdm(data_list, desc="生成张量, 并对类别信息进行one-hot 编码"):
+        data = original_data.copy()
+        if not isinstance(data["date"].iloc[0], np.int64):
+            raise ValueError("请把日期整理成 yyyymmdd 的整形数据")
         feature_cols = data.columns.to_list()
         for col in ("date", "sigma", "side_info", "rtn_next_day", "close", "rtn"):
             if contain_next_day_rtn and col == "rtn_next_day":
@@ -208,7 +209,6 @@ def generate_tensors(
     feature_sequences_tensor = tf.convert_to_tensor(feature_sequences, dtype=tf.float32)
     dates_tensor = tf.convert_to_tensor(dates, dtype=tf.int32)
     side_info_tensor = tf.convert_to_tensor(side_info, dtype=tf.string)
-
     if encoder_type == "one-hot":
         print("one-hot 编码中...")
         side_info_tensor, side_info_map = side_info_one_hot_encoder(
@@ -246,7 +246,7 @@ def generate_context_tensors(data_list: list[pd.DataFrame], method: str, **param
             df[feature_cols].values for df in gaussion_process_list if len(df) > 0
         ]
         date_list = [
-            df["date"].values[-1].astype(np.int64)
+            df["date"].iloc[-1].astype(int)
             for df in gaussion_process_list
             if len(df) > 0
         ]
@@ -283,7 +283,6 @@ def generate_context_tensors(data_list: list[pd.DataFrame], method: str, **param
 
 
 def side_info_one_hot_encoder(
-    
     string_tensor: tf.Tensor,
     word_index: dict = None,
     return_dict=True,
@@ -346,18 +345,18 @@ def gaussian_data_binder(
         gaussion_process_list=gaussion_process_list,
         map = map
     )
-
     # 把 target 绑定按照asset_num资产数目绑定
     features, dates, context = target_set
     rtn, std = labels
 
     unique_dates, _, counts = tf.unique_with_counts(dates)
     twice_dates = tf.boolean_mask(unique_dates, counts == asset_num)
-
     # Create a mapping from dates to indices
     date_to_indices = {
         date.numpy(): tf.where(dates == date).numpy().flatten() for date in twice_dates
     }
+    if len(date_to_indices) == 0:
+        raise ValueError("可供选择的日期为0, asset_num设置的过大")
 
     # Gather features and contexts for these dates, ensuring the order is maintained
     ordered_features, ordered_side_info, ordered_rtn_std = [], [], []
@@ -378,14 +377,13 @@ def gaussian_data_binder(
     feature_sequences_tensor = context_set[0]
     dates_tensor = context_set[1]
     side_info_tensor = context_set[2]
-    dates_tensor_int = [date for date in dates_tensor.numpy()]
 
     new_feature_sequences = []
     new_side_info_sequences = []
     binded_dates = []
     for date in twice_dates.numpy():
         # 找到比当前日期小的日期
-        smaller_dates_indices = tf.where(dates_tensor_int < date)
+        smaller_dates_indices = tf.where(dates_tensor < date)
         if len(smaller_dates_indices) > context_num:
             # 选择一个随机的日期
             chosen_index = tf.random.shuffle(smaller_dates_indices)

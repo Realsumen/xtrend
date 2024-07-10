@@ -1,0 +1,351 @@
+只使用 Sharpe 作为损失函数进行训练
+
+训练中...epoch0:   0%|          | 0/36 [00:00<?, ?it/s]训练中...epoch0:  39%|███▉      | 14/36 [03:02<02:54,  7.91s/it]
+==================================
+训练中...epoch0: 100%|██████████| 36/36 [05:54<00:00,  9.86s/it]
+Epoch 1/500, Validation Joint Loss: 146.20, Validation MLE: 146.10, Validation Sharpe: 0.10
+训练中...epoch1: 100%|██████████| 36/36 [04:26<00:00,  7.39s/it]
+Epoch 2/500, Validation Joint Loss: 121.07, Validation MLE: 120.91, Validation Sharpe: 0.16
+训练中...epoch2: 100%|██████████| 36/36 [04:27<00:00,  7.43s/it]
+Epoch 3/500, Validation Joint Loss: 97.81, Validation MLE: 97.60, Validation Sharpe: 0.21
+训练中...epoch3: 100%|██████████| 36/36 [04:26<00:00,  7.41s/it]
+Epoch 4/500, Validation Joint Loss: 130.35, Validation MLE: 130.37, Validation Sharpe: -0.01
+训练中...epoch4: 100%|██████████| 36/36 [05:41<00:00,  9.47s/it]
+Epoch 5/500, Validation Joint Loss: 101.74, Validation MLE: 101.59, Validation Sharpe: 0.14
+训练中...epoch5: 100%|██████████| 36/36 [04:30<00:00,  7.51s/it]
+Epoch 6/500, Validation Joint Loss: 75.81, Validation MLE: 75.79, Validation Sharpe: 0.02
+训练中...epoch6: 100%|██████████| 36/36 [04:35<00:00,  7.65s/it]
+Epoch 7/500, Validation Joint Loss: 91.29, Validation MLE: 91.62, Validation Sharpe: -0.33
+训练中...epoch7: 100%|██████████| 36/36 [04:42<00:00,  7.84s/it]
+Epoch 8/500, Validation Joint Loss: 92.26, Validation MLE: 92.50, Validation Sharpe: -0.23
+训练中...epoch8: 100%|██████████| 36/36 [05:09<00:00,  8.60s/it]
+Epoch 9/500, Validation Joint Loss: 64.73, Validation MLE: 64.90, Validation Sharpe: -0.17
+训练中...epoch9: 100%|██████████| 36/36 [04:38<00:00,  7.73s/it]
+Epoch 10/500, Validation Joint Loss: 78.91, Validation MLE: 79.02, Validation Sharpe: -0.11
+训练中...epoch10: 100%|██████████| 36/36 [04:45<00:00,  7.94s/it]
+Epoch 11/500, Validation Joint Loss: 112.96, Validation MLE: 113.12, Validation Sharpe: -0.16
+训练中...epoch11: 100%|██████████| 36/36 [05:29<00:00,  9.14s/it]
+Epoch 12/500, Validation Joint Loss: 152.21, Validation MLE: 152.53, Validation Sharpe: -0.32
+训练中...epoch12: 100%|██████████| 36/36 [05:25<00:00,  9.03s/it]
+Epoch 13/500, Validation Joint Loss: 122.64, Validation MLE: 122.99, Validation Sharpe: -0.35
+训练中...epoch13: 100%|██████████| 36/36 [05:19<00:00,  8.87s/it]
+Epoch 14/500, Validation Joint Loss: 100.54, Validation MLE: 100.84, Validation Sharpe: -0.31
+训练中...epoch14: 100%|██████████| 36/36 [04:48<00:00,  8.02s/it]
+Epoch 15/500, Validation Joint Loss: 112.76, Validation MLE: 112.90, Validation Sharpe: -0.14
+训练中...epoch15: 100%|██████████| 36/36 [04:42<00:00,  7.85s/it]
+Epoch 16/500, Validation Joint Loss: 73.43, Validation MLE: 73.83, Validation Sharpe: -0.39
+训练中...epoch16: 100%|██████████| 36/36 [04:42<00:00,  7.84s/it]
+Epoch 17/500, Validation Joint Loss: 126.90, Validation MLE: 127.27, Validation Sharpe: -0.36
+训练中...epoch17: 100%|██████████| 36/36 [04:46<00:00,  7.96s/it]
+Epoch 18/500, Validation Joint Loss: 113.59, Validation MLE: 113.70, Validation Sharpe: -0.11
+训练中...epoch18: 100%|██████████| 36/36 [04:43<00:00,  7.88s/it]
+Epoch 19/500, Validation Joint Loss: 90.67, Validation MLE: 90.80, Validation Sharpe: -0.13
+训练中...epoch19: 100%|██████████| 36/36 [04:46<00:00,  7.97s/it]
+Epoch 20/500, Validation Joint Loss: 111.29, Validation MLE: 111.41, Validation Sharpe: -0.12
+训练中...epoch20: 100%|██████████| 36/36 [06:18<00:00, 10.52s/it]
+Epoch 21/500, Validation Joint Loss: 134.12, Validation MLE: 134.35, Validation Sharpe: -0.22
+训练中...epoch21: 100%|██████████| 36/36 [04:48<00:00,  8.00s/it]
+Epoch 22/500, Validation Joint Loss: 76.34, Validation MLE: 76.52, Validation Sharpe: -0.18
+训练中...epoch22: 100%|██████████| 36/36 [04:52<00:00,  8.13s/it]
+Epoch 23/500, Validation Joint Loss: 110.97, Validation MLE: 111.17, Validation Sharpe: -0.20
+训练中...epoch23: 100%|██████████| 36/36 [04:47<00:00,  7.99s/it]
+Epoch 24/500, Validation Joint Loss: 75.51, Validation MLE: 75.62, Validation Sharpe: -0.11
+训练中...epoch24: 100%|██████████| 36/36 [04:49<00:00,  8.03s/it]
+Epoch 25/500, Validation Joint Loss: 96.30, Validation MLE: 96.47, Validation Sharpe: -0.17
+训练中...epoch25: 100%|██████████| 36/36 [04:50<00:00,  8.07s/it]
+Epoch 26/500, Validation Joint Loss: 135.63, Validation MLE: 135.85, Validation Sharpe: -0.22
+训练中...epoch26: 100%|██████████| 36/36 [04:54<00:00,  8.17s/it]
+Epoch 27/500, Validation Joint Loss: 94.11, Validation MLE: 94.23, Validation Sharpe: -0.12
+训练中...epoch27: 100%|██████████| 36/36 [04:57<00:00,  8.25s/it]
+Epoch 28/500, Validation Joint Loss: 135.79, Validation MLE: 135.89, Validation Sharpe: -0.09
+训练中...epoch28: 100%|██████████| 36/36 [06:18<00:00, 10.52s/it]
+Epoch 29/500, Validation Joint Loss: 114.47, Validation MLE: 114.64, Validation Sharpe: -0.17
+训练中...epoch29: 100%|██████████| 36/36 [05:38<00:00,  9.41s/it]
+Epoch 30/500, Validation Joint Loss: 91.63, Validation MLE: 91.96, Validation Sharpe: -0.33
+训练中...epoch30: 100%|██████████| 36/36 [05:12<00:00,  8.67s/it]
+Epoch 31/500, Validation Joint Loss: 105.71, Validation MLE: 105.84, Validation Sharpe: -0.12
+训练中...epoch31: 100%|██████████| 36/36 [05:39<00:00,  9.43s/it]
+Epoch 32/500, Validation Joint Loss: 149.17, Validation MLE: 149.19, Validation Sharpe: -0.02
+训练中...epoch32: 100%|██████████| 36/36 [05:56<00:00,  9.91s/it]
+Epoch 33/500, Validation Joint Loss: 102.26, Validation MLE: 102.54, Validation Sharpe: -0.27
+训练中...epoch33: 100%|██████████| 36/36 [05:37<00:00,  9.38s/it]
+Epoch 34/500, Validation Joint Loss: 104.83, Validation MLE: 104.93, Validation Sharpe: -0.10
+训练中...epoch34:  56%|█████▌    | 20/36 [02:52<02:36,  9.80s/it]
+
+
+
+========================================================================================================================================
+========================================================================================================================================
+
+
+
+
+
+训练中...epoch0:  25%|██▌       | 9/36 [01:05<03:18,  7.37s/it]ERROR:tensorflow:==================================
+Object was never used (type <class 'tensorflow.python.ops.tensor_array_ops.TensorArray'>):
+<tensorflow.python.ops.tensor_array_ops.TensorArray object at 0x00000271235ABB90>
+If you want to mark it as used call its "mark_used()" method.
+It was originally created here:
+  File "c:\Users\jrfundoffice02\anaconda3\envs\xtrend-env\Lib\site-packages\keras\src\backend\tensorflow\rnn.py", line 418, in <genexpr>
+    output_ta_t = tuple(  File "c:\Users\jrfundoffice02\anaconda3\envs\xtrend-env\Lib\site-packages\tensorflow\python\util\tf_should_use.py", line 288, in wrapped
+    return _add_should_use_warning(fn(*args, **kwargs),
+==================================
+训练中...epoch0: 100%|██████████| 36/36 [04:59<00:00,  8.33s/it]
+Epoch 1/500, Validation Joint Loss: 77.59, Validation MLE: 87.26, Validation Sharpe: -9.67
+训练中...epoch1: 100%|██████████| 36/36 [04:58<00:00,  8.29s/it]
+Epoch 2/500, Validation Joint Loss: 57.47, Validation MLE: 67.62, Validation Sharpe: -10.16
+训练中...epoch2: 100%|██████████| 36/36 [05:01<00:00,  8.37s/it]
+Epoch 3/500, Validation Joint Loss: 71.59, Validation MLE: 81.94, Validation Sharpe: -10.36
+训练中...epoch3: 100%|██████████| 36/36 [05:05<00:00,  8.47s/it]
+Epoch 4/500, Validation Joint Loss: 70.35, Validation MLE: 80.98, Validation Sharpe: -10.62
+训练中...epoch4: 100%|██████████| 36/36 [05:04<00:00,  8.47s/it]
+Epoch 5/500, Validation Joint Loss: 40.60, Validation MLE: 50.93, Validation Sharpe: -10.32
+训练中...epoch5: 100%|██████████| 36/36 [05:03<00:00,  8.43s/it]
+Epoch 6/500, Validation Joint Loss: 70.44, Validation MLE: 81.78, Validation Sharpe: -11.34
+训练中...epoch6: 100%|██████████| 36/36 [05:02<00:00,  8.42s/it]
+Epoch 7/500, Validation Joint Loss: 93.28, Validation MLE: 104.47, Validation Sharpe: -11.19
+训练中...epoch7: 100%|██████████| 36/36 [05:05<00:00,  8.48s/it]
+Epoch 8/500, Validation Joint Loss: 77.92, Validation MLE: 89.76, Validation Sharpe: -11.84
+训练中...epoch8: 100%|██████████| 36/36 [05:06<00:00,  8.50s/it]
+Epoch 9/500, Validation Joint Loss: 91.87, Validation MLE: 103.47, Validation Sharpe: -11.60
+训练中...epoch9: 100%|██████████| 36/36 [05:06<00:00,  8.52s/it]
+Epoch 10/500, Validation Joint Loss: 72.64, Validation MLE: 85.37, Validation Sharpe: -12.73
+训练中...epoch10: 100%|██████████| 36/36 [05:06<00:00,  8.52s/it]
+Epoch 11/500, Validation Joint Loss: 46.70, Validation MLE: 59.56, Validation Sharpe: -12.86
+训练中...epoch11: 100%|██████████| 36/36 [05:06<00:00,  8.53s/it]
+Epoch 12/500, Validation Joint Loss: 99.52, Validation MLE: 112.01, Validation Sharpe: -12.49
+训练中...epoch12: 100%|██████████| 36/36 [05:08<00:00,  8.57s/it]
+Epoch 13/500, Validation Joint Loss: 44.88, Validation MLE: 58.31, Validation Sharpe: -13.43
+训练中...epoch13: 100%|██████████| 36/36 [05:09<00:00,  8.60s/it]
+Epoch 14/500, Validation Joint Loss: 76.76, Validation MLE: 90.10, Validation Sharpe: -13.33
+训练中...epoch14: 100%|██████████| 36/36 [05:12<00:00,  8.68s/it]
+Epoch 15/500, Validation Joint Loss: 67.64, Validation MLE: 81.64, Validation Sharpe: -14.01
+训练中...epoch15: 100%|██████████| 36/36 [05:13<00:00,  8.70s/it]
+Epoch 16/500, Validation Joint Loss: 95.38, Validation MLE: 109.49, Validation Sharpe: -14.11
+训练中...epoch16: 100%|██████████| 36/36 [05:16<00:00,  8.78s/it]
+Epoch 17/500, Validation Joint Loss: 90.16, Validation MLE: 104.78, Validation Sharpe: -14.62
+训练中...epoch17: 100%|██████████| 36/36 [05:17<00:00,  8.81s/it]
+Epoch 18/500, Validation Joint Loss: 51.39, Validation MLE: 65.31, Validation Sharpe: -13.91
+训练中...epoch18: 100%|██████████| 36/36 [05:21<00:00,  8.92s/it]
+Epoch 19/500, Validation Joint Loss: 68.74, Validation MLE: 83.70, Validation Sharpe: -14.96
+训练中...epoch19: 100%|██████████| 36/36 [05:24<00:00,  9.02s/it]
+Epoch 20/500, Validation Joint Loss: 75.38, Validation MLE: 90.45, Validation Sharpe: -15.07
+训练中...epoch20: 100%|██████████| 36/36 [05:25<00:00,  9.04s/it]
+Epoch 21/500, Validation Joint Loss: 81.13, Validation MLE: 96.90, Validation Sharpe: -15.77
+训练中...epoch21: 100%|██████████| 36/36 [05:27<00:00,  9.09s/it]
+Epoch 22/500, Validation Joint Loss: 112.53, Validation MLE: 128.65, Validation Sharpe: -16.12
+训练中...epoch22: 100%|██████████| 36/36 [05:29<00:00,  9.14s/it]
+Epoch 23/500, Validation Joint Loss: 119.48, Validation MLE: 135.34, Validation Sharpe: -15.86
+训练中...epoch23: 100%|██████████| 36/36 [05:32<00:00,  9.23s/it]
+Epoch 24/500, Validation Joint Loss: 103.59, Validation MLE: 119.40, Validation Sharpe: -15.82
+训练中...epoch24: 100%|██████████| 36/36 [05:35<00:00,  9.32s/it]
+Epoch 25/500, Validation Joint Loss: 65.00, Validation MLE: 81.36, Validation Sharpe: -16.36
+训练中...epoch25: 100%|██████████| 36/36 [05:38<00:00,  9.41s/it]
+Epoch 26/500, Validation Joint Loss: 79.26, Validation MLE: 96.70, Validation Sharpe: -17.44
+训练中...epoch26: 100%|██████████| 36/36 [05:38<00:00,  9.40s/it]
+Epoch 27/500, Validation Joint Loss: 113.53, Validation MLE: 130.29, Validation Sharpe: -16.75
+训练中...epoch27: 100%|██████████| 36/36 [05:42<00:00,  9.53s/it]
+Epoch 28/500, Validation Joint Loss: 119.69, Validation MLE: 137.50, Validation Sharpe: -17.81
+训练中...epoch28: 100%|██████████| 36/36 [05:42<00:00,  9.52s/it]
+Epoch 29/500, Validation Joint Loss: 79.00, Validation MLE: 96.54, Validation Sharpe: -17.54
+训练中...epoch29: 100%|██████████| 36/36 [05:45<00:00,  9.61s/it]
+Epoch 30/500, Validation Joint Loss: 89.31, Validation MLE: 105.89, Validation Sharpe: -16.58
+训练中...epoch30: 100%|██████████| 36/36 [05:49<00:00,  9.70s/it]
+Epoch 31/500, Validation Joint Loss: 107.38, Validation MLE: 125.03, Validation Sharpe: -17.64
+训练中...epoch31: 100%|██████████| 36/36 [05:50<00:00,  9.72s/it]
+Epoch 32/500, Validation Joint Loss: 56.35, Validation MLE: 73.82, Validation Sharpe: -17.47
+训练中...epoch32: 100%|██████████| 36/36 [05:51<00:00,  9.76s/it]
+Epoch 33/500, Validation Joint Loss: 50.20, Validation MLE: 67.26, Validation Sharpe: -17.06
+训练中...epoch33: 100%|██████████| 36/36 [05:53<00:00,  9.82s/it]
+Epoch 34/500, Validation Joint Loss: 85.87, Validation MLE: 104.29, Validation Sharpe: -18.42
+训练中...epoch34: 100%|██████████| 36/36 [05:53<00:00,  9.83s/it]
+Epoch 35/500, Validation Joint Loss: 66.88, Validation MLE: 82.90, Validation Sharpe: -16.02
+训练中...epoch35: 100%|██████████| 36/36 [05:56<00:00,  9.90s/it]
+Epoch 36/500, Validation Joint Loss: 65.39, Validation MLE: 84.85, Validation Sharpe: -19.46
+训练中...epoch36: 100%|██████████| 36/36 [05:58<00:00,  9.95s/it]
+Epoch 37/500, Validation Joint Loss: 89.46, Validation MLE: 105.93, Validation Sharpe: -16.48
+训练中...epoch37: 100%|██████████| 36/36 [06:03<00:00, 10.09s/it]
+Epoch 38/500, Validation Joint Loss: 51.61, Validation MLE: 69.65, Validation Sharpe: -18.04
+训练中...epoch38: 100%|██████████| 36/36 [06:02<00:00, 10.07s/it]
+Epoch 39/500, Validation Joint Loss: 107.44, Validation MLE: 126.97, Validation Sharpe: -19.53
+训练中...epoch39: 100%|██████████| 36/36 [06:03<00:00, 10.10s/it]
+Epoch 40/500, Validation Joint Loss: 98.39, Validation MLE: 116.82, Validation Sharpe: -18.43
+训练中...epoch40: 100%|██████████| 36/36 [06:04<00:00, 10.13s/it]
+Epoch 41/500, Validation Joint Loss: 81.88, Validation MLE: 101.31, Validation Sharpe: -19.43
+训练中...epoch41: 100%|██████████| 36/36 [06:07<00:00, 10.21s/it]
+Epoch 42/500, Validation Joint Loss: 110.29, Validation MLE: 130.30, Validation Sharpe: -20.01
+训练中...epoch42: 100%|██████████| 36/36 [06:09<00:00, 10.26s/it]
+Epoch 43/500, Validation Joint Loss: 127.74, Validation MLE: 145.62, Validation Sharpe: -17.88
+训练中...epoch43: 100%|██████████| 36/36 [06:11<00:00, 10.33s/it]
+Epoch 44/500, Validation Joint Loss: 94.66, Validation MLE: 114.66, Validation Sharpe: -20.00
+训练中...epoch44: 100%|██████████| 36/36 [06:11<00:00, 10.33s/it]
+Epoch 45/500, Validation Joint Loss: 106.57, Validation MLE: 126.87, Validation Sharpe: -20.29
+训练中...epoch45: 100%|██████████| 36/36 [06:14<00:00, 10.41s/it]
+Epoch 46/500, Validation Joint Loss: 97.49, Validation MLE: 115.09, Validation Sharpe: -17.60
+训练中...epoch46: 100%|██████████| 36/36 [06:15<00:00, 10.43s/it]
+Epoch 47/500, Validation Joint Loss: 55.47, Validation MLE: 75.09, Validation Sharpe: -19.62
+训练中...epoch47: 100%|██████████| 36/36 [06:16<00:00, 10.45s/it]
+Epoch 48/500, Validation Joint Loss: 84.65, Validation MLE: 106.83, Validation Sharpe: -22.18
+训练中...epoch48: 100%|██████████| 36/36 [06:16<00:00, 10.45s/it]
+Epoch 49/500, Validation Joint Loss: 79.88, Validation MLE: 99.50, Validation Sharpe: -19.62
+训练中...epoch49: 100%|██████████| 36/36 [06:18<00:00, 10.50s/it]
+Epoch 50/500, Validation Joint Loss: 98.93, Validation MLE: 120.72, Validation Sharpe: -21.80
+训练中...epoch50: 100%|██████████| 36/36 [06:19<00:00, 10.56s/it]
+Epoch 51/500, Validation Joint Loss: 124.07, Validation MLE: 146.17, Validation Sharpe: -22.10
+训练中...epoch51: 100%|██████████| 36/36 [06:20<00:00, 10.57s/it]
+Epoch 52/500, Validation Joint Loss: 51.34, Validation MLE: 74.17, Validation Sharpe: -22.83
+训练中...epoch52: 100%|██████████| 36/36 [06:24<00:00, 10.68s/it]
+Epoch 53/500, Validation Joint Loss: 85.21, Validation MLE: 107.27, Validation Sharpe: -22.06
+训练中...epoch53: 100%|██████████| 36/36 [06:25<00:00, 10.70s/it]
+Epoch 54/500, Validation Joint Loss: 75.65, Validation MLE: 98.12, Validation Sharpe: -22.47
+训练中...epoch54: 100%|██████████| 36/36 [06:26<00:00, 10.75s/it]
+Epoch 55/500, Validation Joint Loss: 132.50, Validation MLE: 151.37, Validation Sharpe: -18.87
+训练中...epoch55: 100%|██████████| 36/36 [06:27<00:00, 10.78s/it]
+Epoch 56/500, Validation Joint Loss: 126.06, Validation MLE: 149.51, Validation Sharpe: -23.45
+训练中...epoch56: 100%|██████████| 36/36 [06:32<00:00, 10.90s/it]
+Epoch 57/500, Validation Joint Loss: 57.93, Validation MLE: 81.45, Validation Sharpe: -23.52
+训练中...epoch57: 100%|██████████| 36/36 [06:33<00:00, 10.92s/it]
+Epoch 58/500, Validation Joint Loss: 74.60, Validation MLE: 98.42, Validation Sharpe: -23.82
+训练中...epoch58: 100%|██████████| 36/36 [06:35<00:00, 10.97s/it]
+Epoch 59/500, Validation Joint Loss: 89.99, Validation MLE: 113.12, Validation Sharpe: -23.13
+训练中...epoch59: 100%|██████████| 36/36 [06:40<00:00, 11.12s/it]
+Epoch 60/500, Validation Joint Loss: 105.70, Validation MLE: 130.22, Validation Sharpe: -24.53
+训练中...epoch60: 100%|██████████| 36/36 [06:40<00:00, 11.14s/it]
+Epoch 61/500, Validation Joint Loss: 113.41, Validation MLE: 135.93, Validation Sharpe: -22.52
+训练中...epoch61: 100%|██████████| 36/36 [06:43<00:00, 11.19s/it]
+Epoch 62/500, Validation Joint Loss: 45.63, Validation MLE: 66.77, Validation Sharpe: -21.14
+训练中...epoch62: 100%|██████████| 36/36 [06:44<00:00, 11.23s/it]
+Epoch 63/500, Validation Joint Loss: 81.86, Validation MLE: 106.42, Validation Sharpe: -24.56
+训练中...epoch63: 100%|██████████| 36/36 [06:43<00:00, 11.21s/it]
+Epoch 64/500, Validation Joint Loss: 89.28, Validation MLE: 113.12, Validation Sharpe: -23.84
+训练中...epoch64: 100%|██████████| 36/36 [06:44<00:00, 11.25s/it]
+Epoch 65/500, Validation Joint Loss: 90.15, Validation MLE: 113.53, Validation Sharpe: -23.38
+训练中...epoch65: 100%|██████████| 36/36 [06:46<00:00, 11.29s/it]
+Epoch 66/500, Validation Joint Loss: 95.37, Validation MLE: 119.83, Validation Sharpe: -24.46
+训练中...epoch66: 100%|██████████| 36/36 [06:50<00:00, 11.40s/it]
+Epoch 67/500, Validation Joint Loss: 103.75, Validation MLE: 126.05, Validation Sharpe: -22.30
+训练中...epoch67: 100%|██████████| 36/36 [06:51<00:00, 11.43s/it]
+Epoch 68/500, Validation Joint Loss: 65.19, Validation MLE: 89.98, Validation Sharpe: -24.79
+训练中...epoch68: 100%|██████████| 36/36 [06:51<00:00, 11.44s/it]
+Epoch 69/500, Validation Joint Loss: 121.02, Validation MLE: 146.30, Validation Sharpe: -25.28
+训练中...epoch69: 100%|██████████| 36/36 [06:51<00:00, 11.44s/it]
+Epoch 70/500, Validation Joint Loss: 47.43, Validation MLE: 67.74, Validation Sharpe: -20.31
+训练中...epoch70: 100%|██████████| 36/36 [06:56<00:00, 11.56s/it]
+Epoch 71/500, Validation Joint Loss: 42.28, Validation MLE: 66.44, Validation Sharpe: -24.16
+训练中...epoch71: 100%|██████████| 36/36 [06:56<00:00, 11.58s/it]
+Epoch 72/500, Validation Joint Loss: 78.94, Validation MLE: 104.79, Validation Sharpe: -25.85
+训练中...epoch72: 100%|██████████| 36/36 [06:55<00:00, 11.55s/it]
+Epoch 73/500, Validation Joint Loss: 71.72, Validation MLE: 97.84, Validation Sharpe: -26.13
+训练中...epoch73: 100%|██████████| 36/36 [06:57<00:00, 11.61s/it]
+Epoch 74/500, Validation Joint Loss: 67.97, Validation MLE: 90.93, Validation Sharpe: -22.96
+训练中...epoch74: 100%|██████████| 36/36 [07:00<00:00, 11.68s/it]
+Epoch 75/500, Validation Joint Loss: 67.96, Validation MLE: 93.40, Validation Sharpe: -25.44
+训练中...epoch75: 100%|██████████| 36/36 [07:01<00:00, 11.70s/it]
+Epoch 76/500, Validation Joint Loss: 60.18, Validation MLE: 83.40, Validation Sharpe: -23.23
+训练中...epoch76: 100%|██████████| 36/36 [07:01<00:00, 11.72s/it]
+Epoch 77/500, Validation Joint Loss: 96.13, Validation MLE: 121.17, Validation Sharpe: -25.04
+训练中...epoch77: 100%|██████████| 36/36 [07:02<00:00, 11.74s/it]
+Epoch 78/500, Validation Joint Loss: 81.93, Validation MLE: 107.59, Validation Sharpe: -25.66
+训练中...epoch78: 100%|██████████| 36/36 [07:06<00:00, 11.84s/it]
+Epoch 79/500, Validation Joint Loss: 63.10, Validation MLE: 88.85, Validation Sharpe: -25.75
+训练中...epoch79: 100%|██████████| 36/36 [07:05<00:00, 11.82s/it]
+Epoch 80/500, Validation Joint Loss: 95.91, Validation MLE: 121.05, Validation Sharpe: -25.14
+训练中...epoch80: 100%|██████████| 36/36 [07:10<00:00, 11.95s/it]
+Epoch 81/500, Validation Joint Loss: 40.12, Validation MLE: 66.73, Validation Sharpe: -26.61
+训练中...epoch81: 100%|██████████| 36/36 [07:06<00:00, 11.86s/it]
+Epoch 82/500, Validation Joint Loss: 86.52, Validation MLE: 113.05, Validation Sharpe: -26.53
+训练中...epoch82: 100%|██████████| 36/36 [07:13<00:00, 12.03s/it]
+Epoch 83/500, Validation Joint Loss: 57.72, Validation MLE: 82.83, Validation Sharpe: -25.11
+训练中...epoch83: 100%|██████████| 36/36 [07:18<00:00, 12.17s/it]
+Epoch 84/500, Validation Joint Loss: 104.44, Validation MLE: 131.79, Validation Sharpe: -27.36
+训练中...epoch84: 100%|██████████| 36/36 [07:18<00:00, 12.19s/it]
+Epoch 85/500, Validation Joint Loss: 49.88, Validation MLE: 74.87, Validation Sharpe: -24.99
+训练中...epoch85: 100%|██████████| 36/36 [07:18<00:00, 12.19s/it]
+Epoch 86/500, Validation Joint Loss: 60.80, Validation MLE: 90.23, Validation Sharpe: -29.44
+训练中...epoch86: 100%|██████████| 36/36 [07:21<00:00, 12.26s/it]
+Epoch 87/500, Validation Joint Loss: 78.26, Validation MLE: 106.03, Validation Sharpe: -27.77
+训练中...epoch87: 100%|██████████| 36/36 [07:21<00:00, 12.25s/it]
+Epoch 88/500, Validation Joint Loss: 101.76, Validation MLE: 130.47, Validation Sharpe: -28.72
+训练中...epoch88: 100%|██████████| 36/36 [07:23<00:00, 12.32s/it]
+Epoch 89/500, Validation Joint Loss: 123.63, Validation MLE: 150.71, Validation Sharpe: -27.08
+训练中...epoch89: 100%|██████████| 36/36 [07:28<00:00, 12.45s/it]
+Epoch 90/500, Validation Joint Loss: 98.96, Validation MLE: 125.00, Validation Sharpe: -26.04
+训练中...epoch90: 100%|██████████| 36/36 [07:30<00:00, 12.52s/it]
+Epoch 91/500, Validation Joint Loss: 72.07, Validation MLE: 100.08, Validation Sharpe: -28.01
+训练中...epoch91: 100%|██████████| 36/36 [07:31<00:00, 12.53s/it]
+Epoch 92/500, Validation Joint Loss: 71.10, Validation MLE: 99.34, Validation Sharpe: -28.24
+训练中...epoch92: 100%|██████████| 36/36 [07:32<00:00, 12.57s/it]
+Epoch 93/500, Validation Joint Loss: 54.17, Validation MLE: 83.06, Validation Sharpe: -28.89
+训练中...epoch93: 100%|██████████| 36/36 [07:37<00:00, 12.71s/it]
+Epoch 94/500, Validation Joint Loss: 104.78, Validation MLE: 130.74, Validation Sharpe: -25.96
+训练中...epoch94: 100%|██████████| 36/36 [07:40<00:00, 12.79s/it]
+Epoch 95/500, Validation Joint Loss: 45.33, Validation MLE: 75.77, Validation Sharpe: -30.44
+训练中...epoch95: 100%|██████████| 36/36 [07:43<00:00, 12.88s/it]
+Epoch 96/500, Validation Joint Loss: 85.26, Validation MLE: 114.32, Validation Sharpe: -29.05
+训练中...epoch96: 100%|██████████| 36/36 [07:45<00:00, 12.94s/it]
+Epoch 97/500, Validation Joint Loss: 107.84, Validation MLE: 136.81, Validation Sharpe: -28.96
+训练中...epoch97: 100%|██████████| 36/36 [07:47<00:00, 12.98s/it]
+Epoch 98/500, Validation Joint Loss: 60.46, Validation MLE: 91.12, Validation Sharpe: -30.65
+训练中...epoch98: 100%|██████████| 36/36 [07:52<00:00, 13.13s/it]
+Epoch 99/500, Validation Joint Loss: 113.60, Validation MLE: 140.55, Validation Sharpe: -26.94
+训练中...epoch99: 100%|██████████| 36/36 [07:54<00:00, 13.17s/it]
+Epoch 100/500, Validation Joint Loss: 90.16, Validation MLE: 119.81, Validation Sharpe: -29.66
+训练中...epoch100: 100%|██████████| 36/36 [07:55<00:00, 13.22s/it]
+Epoch 101/500, Validation Joint Loss: 140.84, Validation MLE: 168.60, Validation Sharpe: -27.76
+训练中...epoch101: 100%|██████████| 36/36 [07:56<00:00, 13.24s/it]
+Epoch 102/500, Validation Joint Loss: 77.97, Validation MLE: 108.44, Validation Sharpe: -30.47
+训练中...epoch102: 100%|██████████| 36/36 [08:00<00:00, 13.34s/it]
+Epoch 103/500, Validation Joint Loss: 80.08, Validation MLE: 110.04, Validation Sharpe: -29.96
+训练中...epoch103: 100%|██████████| 36/36 [08:03<00:00, 13.42s/it]
+Epoch 104/500, Validation Joint Loss: 118.27, Validation MLE: 149.36, Validation Sharpe: -31.09
+训练中...epoch104: 100%|██████████| 36/36 [08:05<00:00, 13.49s/it]
+Epoch 105/500, Validation Joint Loss: 72.51, Validation MLE: 102.97, Validation Sharpe: -30.46
+训练中...epoch105: 100%|██████████| 36/36 [08:05<00:00, 13.48s/it]
+Epoch 106/500, Validation Joint Loss: 44.59, Validation MLE: 74.44, Validation Sharpe: -29.85
+训练中...epoch106: 100%|██████████| 36/36 [08:05<00:00, 13.50s/it]
+Epoch 107/500, Validation Joint Loss: 58.53, Validation MLE: 89.68, Validation Sharpe: -31.15
+训练中...epoch107: 100%|██████████| 36/36 [08:06<00:00, 13.51s/it]
+Epoch 108/500, Validation Joint Loss: 38.05, Validation MLE: 70.33, Validation Sharpe: -32.29
+训练中...epoch108: 100%|██████████| 36/36 [08:05<00:00, 13.47s/it]
+Epoch 109/500, Validation Joint Loss: 58.14, Validation MLE: 87.45, Validation Sharpe: -29.31
+训练中...epoch109: 100%|██████████| 36/36 [08:09<00:00, 13.58s/it]
+Epoch 110/500, Validation Joint Loss: 82.39, Validation MLE: 113.00, Validation Sharpe: -30.61
+训练中...epoch110: 100%|██████████| 36/36 [08:11<00:00, 13.66s/it]
+Epoch 111/500, Validation Joint Loss: 75.54, Validation MLE: 105.40, Validation Sharpe: -29.85
+训练中...epoch111: 100%|██████████| 36/36 [08:11<00:00, 13.66s/it]
+Epoch 112/500, Validation Joint Loss: 72.47, Validation MLE: 103.55, Validation Sharpe: -31.08
+训练中...epoch112: 100%|██████████| 36/36 [08:12<00:00, 13.68s/it]
+Epoch 113/500, Validation Joint Loss: 58.79, Validation MLE: 90.46, Validation Sharpe: -31.67
+训练中...epoch113: 100%|██████████| 36/36 [08:16<00:00, 13.80s/it]
+Epoch 114/500, Validation Joint Loss: 48.48, Validation MLE: 82.62, Validation Sharpe: -34.14
+训练中...epoch114: 100%|██████████| 36/36 [08:16<00:00, 13.79s/it]
+Epoch 115/500, Validation Joint Loss: 58.13, Validation MLE: 89.35, Validation Sharpe: -31.23
+训练中...epoch115: 100%|██████████| 36/36 [08:19<00:00, 13.87s/it]
+Epoch 116/500, Validation Joint Loss: 88.58, Validation MLE: 118.10, Validation Sharpe: -29.52
+训练中...epoch116: 100%|██████████| 36/36 [08:23<00:00, 13.98s/it]
+Epoch 117/500, Validation Joint Loss: 86.74, Validation MLE: 117.14, Validation Sharpe: -30.40
+训练中...epoch117: 100%|██████████| 36/36 [08:23<00:00, 13.99s/it]
+Epoch 118/500, Validation Joint Loss: 95.30, Validation MLE: 128.45, Validation Sharpe: -33.15
+训练中...epoch118: 100%|██████████| 36/36 [08:24<00:00, 14.03s/it]
+Epoch 119/500, Validation Joint Loss: 57.57, Validation MLE: 87.79, Validation Sharpe: -30.21
+训练中...epoch119: 100%|██████████| 36/36 [08:28<00:00, 14.12s/it]
+Epoch 120/500, Validation Joint Loss: 79.15, Validation MLE: 111.05, Validation Sharpe: -31.89
+训练中...epoch120: 100%|██████████| 36/36 [08:31<00:00, 14.21s/it]
+Epoch 121/500, Validation Joint Loss: 87.72, Validation MLE: 121.96, Validation Sharpe: -34.25
+训练中...epoch121: 100%|██████████| 36/36 [08:35<00:00, 14.33s/it]
+Epoch 122/500, Validation Joint Loss: 53.89, Validation MLE: 82.53, Validation Sharpe: -28.63
+训练中...epoch122: 100%|██████████| 36/36 [08:41<00:00, 14.48s/it]
+Epoch 123/500, Validation Joint Loss: 93.73, Validation MLE: 121.03, Validation Sharpe: -27.30
+训练中...epoch123: 100%|██████████| 36/36 [08:46<00:00, 14.63s/it]
+Epoch 124/500, Validation Joint Loss: 82.19, Validation MLE: 112.17, Validation Sharpe: -29.98
+训练中...epoch124: 100%|██████████| 36/36 [09:07<00:00, 15.22s/it]
+Epoch 125/500, Validation Joint Loss: 63.20, Validation MLE: 96.65, Validation Sharpe: -33.45
+训练中...epoch125: 100%|██████████| 36/36 [08:59<00:00, 14.99s/it]
+Epoch 126/500, Validation Joint Loss: 73.55, Validation MLE: 103.72, Validation Sharpe: -30.16
+训练中...epoch126: 100%|██████████| 36/36 [09:23<00:00, 15.66s/it]
+Epoch 127/500, Validation Joint Loss: 98.58, Validation MLE: 131.35, Validation Sharpe: -32.77
+训练中...epoch127: 100%|██████████| 36/36 [11:16<00:00, 18.80s/it]
+Epoch 128/500, Validation Joint Loss: 66.00, Validation MLE: 100.39, Validation Sharpe: -34.39
+训练中...epoch128: 100%|██████████| 36/36 [09:47<00:00, 16.31s/it]
+Epoch 129/500, Validation Joint Loss: 64.34, Validation MLE: 97.57, Validation Sharpe: -33.23
+训练中...epoch129:  14%|█▍        | 5/36 [01:46<11:02, 21.37s/it]

@@ -1,6 +1,5 @@
 gpflow==2.9.2
-numpy==2.0.0
+heartrate==0.2.2
 pandas==2.2.2
 tensorflow==2.16.1
-# tensorflow_intel==2.16.1
-tqdm==4.66.4
+tqdm
