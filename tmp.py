@@ -2,7 +2,7 @@ import tensorflow as tf
 import importlib
 import os
 import loss_functions
-import dataprocessor
+import depreciate.dataprocessor as dataprocessor
 import model
 import pickle
 import change_point_detection
@@ -18,7 +18,7 @@ reload_custom_libs()
 from change_point_detection import *
 from loss_functions import *
 from model import *
-from dataprocessor import *
+from depreciate.dataprocessor import *
 
 macd_timescales = [(8, 24), (16, 28), (32, 96)]
 rtn_timescales = [1, 21, 63, 126, 252]

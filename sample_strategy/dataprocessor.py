@@ -12,70 +12,6 @@ MACD_timescales = [(8, 24), (16, 28), (32, 96)]
 RTN_timescales = [1, 21, 63, 126, 252]
 
 
-def process_file(args):
-    file, macd_timescales, rtn_timescales, test = args
-    
-    # 判断文件的类型，进行处理
-    if file.endswith("xlsx"):
-        data = pd.read_excel(f"data/{file}")[["日期", "收盘价(元)"]]
-        side_info = file.replace(".xlsx", "")
-    elif file.endswith("parquet"):
-        data = pd.read_parquet(f"data/{file}")[["日期", "收盘价(元)"]]
-        side_info = file.replace(".parquet", "")
-    elif file.endswith("csv"):
-        data = pd.read_csv(f"data/{file}")[["日期", "收盘价(元)"]]
-        side_info = file.replace(".csv", "")
-    data = data.rename(columns={"日期": "date", "收盘价(元)": "close"}).sort_values("date")
-    data["side_info"] = side_info
-    try:
-        data = generate_features(data, macd_timescales, rtn_timescales)
-    except:
-        # 传回异常资产名称
-        return side_info
-    if test is not None:
-        # 如果 test 不为空的话，分段生成变点数据帧
-        if len(data) < test[0]:
-            data =  None
-        elif len(data) > test[0] and len(data) < test[1]:
-            data = data.iloc[test[0]:, :]
-        else:
-            data = data.iloc[test[0]:test[1], :]
-    return data
-
-
-def process_data_list(
-    files: list[str],
-    macd_timescales: list = MACD_timescales,
-    rtn_timescales: list = RTN_timescales,
-    test: int = None,
-    last_date: int = None
-) -> list[pd.DataFrame]:
-    """
-    处理文件列表并生成包含特征的数据帧列表。
-
-    args:
-        files (list[str]): 文件路径的列表。
-        macd_timescales (list, optional): MACD的时间尺度列表。默认为MACD_timescales。
-        rtn_timescales (list, optional): 回报率的时间尺度列表。默认为RTN_timescales。
-        test (int, optional): 测试参数/分段进行变点检测, 默认为None。
-
-    return:
-        list[pd.DataFrame]: 包含处理后数据的数据帧列表, 每个数据帧是一个资产的一个无变点片段
-    """
-    data_list = []
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
-        futures = [executor.submit(process_file, (file, macd_timescales, rtn_timescales, test)) for file in files]
-        for future in futures:
-            result = future.result()
-            if result is not None:
-                if isinstance(result, str):
-                    print(f"{result}.csv 中含有空值, 其中的数据没有录入列表")
-                    continue
-                data = result.loc[result["date"] <= last_date]
-                data_list.append(data)
-    return data_list
-
-
 def generate_features(
     data: pd.DataFrame, macd_timscales: list, rtn_timscales: list
 ) -> pd.DataFrame:
@@ -92,6 +28,9 @@ def generate_features(
         pd.DataFrame: 包含日期和MACD值的数据。
     """
     data = data.sort_values("date")
+    if data.isnull().any().any():
+        raise ValueError("输入数据中存在 null 或者 na, 检查输入的数据")
+    data.loc[data['close'] == -1, 'close'] = np.nan # 把空值转换成 nan, 在最后转换成-1
     data["rtn_next_day"] = data["close"].shift(-1) / data["close"] - 1
     data["rtn"] = data["close"] / data["close"].shift(1) - 1
 
@@ -99,10 +38,6 @@ def generate_features(
     date_series = data["date"]
     rtn_series = data["rtn"]
     data = data.set_index("date")
-
-    if close_series.isnull().any() or close_series.isna().any():
-        raise ValueError("收盘数据中存在 null 或者 na, 检查输入的数据")
-
     exp = lambda series, alpha: series.ewm(alpha=alpha)
     for s, l in macd_timscales:
         m = []
@@ -135,14 +70,92 @@ def generate_features(
         data[f"rtn_{i}"] = pd.Series(normalized_rtn, index=date_series)
 
     data.reset_index(inplace=True)
-    data.dropna(inplace=True)
     return data
+
+
+def process_file(args):
+    file, macd_timescales, rtn_timescales = args
+    
+    # 判断文件的类型, 进行处理
+    if file.endswith("xlsx"):
+        data = pd.read_excel(f"data/{file}")[["日期", "收盘价(元)"]]
+        side_info = file.replace(".xlsx", "")
+    elif file.endswith("parquet"):
+        data = pd.read_parquet(f"data/{file}")[["日期", "收盘价(元)"]]
+        side_info = file.replace(".parquet", "")
+    elif file.endswith("csv"):
+        data = pd.read_csv(f"data/{file}")[["日期", "收盘价(元)"]]
+        side_info = file.replace(".csv", "")
+    data = data.rename(columns={"日期": "date", "收盘价(元)": "close"}).sort_values("date")
+    data["side_info"] = side_info
+    try:
+        data = generate_features(data, macd_timescales, rtn_timescales)
+        return data
+    except:
+        # 传回异常资产名称
+        return side_info
+
+
+def process_data_list(
+    files: list[str],
+    macd_timescales: list = MACD_timescales,
+    rtn_timescales: list = RTN_timescales,
+    first_date: int = None,
+    last_date: int = None,
+    fill: bool = False
+) -> list[pd.DataFrame]:
+    """
+    处理文件列表并生成包含特征的数据帧列表。
+
+    args:
+        files (list[str]): 文件路径的列表。
+        macd_timescales (list, optional): MACD的时间尺度列表。默认为MACD_timescales。
+        rtn_timescales (list, optional): 回报率的时间尺度列表。默认为RTN_timescales。
+        first_date (int, optional): 需要的数据起始日期。默认为None。
+        last_date (int, optional): 需要的数据结束日期。默认为None。
+        fill (bool, optional): 是否填充缺失数据。在训练时应设置为False, drop掉所有空值。在预测时应设置为True, 并在填充缺失数据时记录被填补的序列index。
+        
+    return:
+        Union[list[pd.DataFrame], Tuple[list[pd.DataFrame], list[int]]]: 
+        - 如果fill为False, 返回包含处理后数据的数据帧列表
+        - 如果fill为True, 返回包含数据帧列表和被填补的序列index的元组。
+    """
+    data_list = []
+    if fill:
+        fill_list = [] # 记录被填补的序列index
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+        futures = [executor.submit(process_file, (file, macd_timescales, rtn_timescales)) for file in files]
+        for i, future in enumerate(futures):
+            result = future.result()
+            if result is not None:
+                if isinstance(result, str):
+                    print(f"{result}.csv 中含有空值, 其中的数据没有录入列表")
+                    continue
+                result = result.copy()
+                if last_date is None and first_date is None:
+                    result.dropna(axis=0)
+                    data_list.append(result)
+                else:
+                    # 筛选部分数据时, 保持对齐
+                    first_date = first_date if first_date is not None else result["date"].iloc[0] 
+                    last_date = last_date if last_date is not None else result["date"].iloc[-1]
+                    result = result.loc[(result["date"] >= first_date) & (result["date"] <= last_date), :]
+                    if fill: 
+                        result.fillna(value=0, inplace=True)
+                        fill_list.append(i)
+                    else:
+                        result.dropna(axis=0, inplace=True)
+                    data_list.append(result)
+    if fill:
+        return (data_list, fill_list)
+    return data_list
 
 
 def generate_tensors(
     data_list: list[pd.DataFrame],
     time_steps: int,
     encoder_type: str,
+    word_index: dict = None,
     contain_next_day_rtn: bool = False,
     return_map: bool = False,
 ):
@@ -166,6 +179,7 @@ def generate_tensors(
     std = []
     for original_data  in tqdm(data_list, desc="生成张量, 并对类别信息进行one-hot 编码"):
         data = original_data.copy()
+        print(data["date"].iloc[0])
         if not isinstance(data["date"].iloc[0], np.int64):
             raise ValueError("请把日期整理成 yyyymmdd 的整形数据")
         feature_cols = data.columns.to_list()
@@ -212,7 +226,7 @@ def generate_tensors(
     if encoder_type == "one-hot":
         print("one-hot 编码中...")
         side_info_tensor, side_info_map = side_info_one_hot_encoder(
-            side_info_tensor, time_steps=time_steps
+            side_info_tensor, word_index=word_index, time_steps=time_steps
         )
     else:
         raise NotImplementedError("除 one-hot 之外的方法暂未实现")
@@ -422,7 +436,7 @@ def gaussian_data_binder(
         i for i, date in enumerate(target_set[1].numpy()) if date in context_dates_set
     ]
 
-    # 根据已绑定的 target_set 日期索引筛选 target_set， 没绑定的直接舍弃
+    # 根据已绑定的 target_set 日期索引筛选 target_set,  没绑定的直接舍弃
     filtered_target_feature_sequences = tf.gather(target_set[0], indices)
     filtered_target_dates = tf.gather(target_set[1], indices)
     filtered_target_side_info = tf.gather(target_set[2], indices)
@@ -465,7 +479,7 @@ def data_binder_do_not_use(
     """
     def key_func(x_c, x_c_rtn, s_c, x, s, rtn_std, x_c_date, x_dates):
         """
-        databinder() 中，获取用于分组的键 (相同日期一组)。
+        databinder() 中, 获取用于分组的键 (相同日期一组)。
         """
         return date_to_int(x_dates)
 

@@ -48,6 +48,7 @@ def process_data_list(
     macd_timescales: list = MACD_timescales,
     rtn_timescales: list = RTN_timescales,
     test: int = None,
+    start_date: int = None,
     last_date: int = None
 ) -> list[pd.DataFrame]:
     """
@@ -68,16 +69,16 @@ def process_data_list(
         for future in futures:
             result = future.result()
             if result is not None:
-                if last_date is not None:
-                    data = result.loc[result["date"] <= last_date]
-                    data_list.append(data)
-                else:
-                    data_list.append(result)
+                data = result.loc[result["date"] <= last_date]
+                data_list.append(data)
+            else:
+                data_list.append(result)
     
     return data_list
 
 
 def generate_features(
+    
     data: pd.DataFrame, macd_timscales: list, rtn_timscales: list
 ) -> pd.DataFrame:
     """
