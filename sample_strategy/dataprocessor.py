@@ -131,7 +131,7 @@ def process_data_list(
                 if isinstance(result, str):
                     print(f"{result}.csv 中含有空值, 其中的数据没有录入列表")
                     continue
-                result = result.copy()
+                result = result.iloc[:-1, :].copy() # 不要最后一行, rtn_nextday 为空
                 if last_date is None and first_date is None:
                     result.dropna(axis=0)
                     data_list.append(result)
@@ -141,8 +141,9 @@ def process_data_list(
                     last_date = last_date if last_date is not None else result["date"].iloc[-1]
                     result = result.loc[(result["date"] >= first_date) & (result["date"] <= last_date), :]
                     if fill: 
+                        if result["close"].isna().any(): # 检查 收盘数据是否有空值，如果有，说明需要被fillna
+                            fill_list.append(i)
                         result.fillna(value=0, inplace=True)
-                        fill_list.append(i)
                     else:
                         result.dropna(axis=0, inplace=True)
                     data_list.append(result)
@@ -179,7 +180,6 @@ def generate_tensors(
     std = []
     for original_data  in tqdm(data_list, desc="生成张量, 并对类别信息进行one-hot 编码"):
         data = original_data.copy()
-        print(data["date"].iloc[0])
         if not isinstance(data["date"].iloc[0], np.int64):
             raise ValueError("请把日期整理成 yyyymmdd 的整形数据")
         feature_cols = data.columns.to_list()
