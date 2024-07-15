@@ -22,8 +22,6 @@ features_len = len(macd_timescales) + len(rtn_timescales)
 files = [f for f in os.listdir(folder_path) if f.endswith(".csv")][:10]
 
 
-
-
 def run():
     global timesteps
     gaussion_process_list = []
@@ -59,9 +57,10 @@ def run():
 
     timesteps = x.shape[-2]
     features_len = x.shape[-1]
-    encoding_size = s.shape[-1]
+    # encoding_size = s.shape[-1]
+    encoding_size = hidden_dim  # 
     x_shape = (None, asset_num, timesteps, features_len)
-    s_shape = (None, asset_num, timesteps, encoding_size)
+    s_shape = (None, asset_num, timesteps, hidden_dim)
 
     # 初始化模型
     xtrend_model = ModelWrapper(features_len, hidden_dim, encoding_size, num_heads=4, dropout_rate=0.4)
@@ -97,7 +96,7 @@ def train(model, dataset: tf.data.Dataset, batch_num: int, num_epochs: int, alph
             # 对每一个批次进行处理
             x_c, x_c_rtn, s_c, x, s, labels = batch_data
             with tf.GradientTape() as tape:
-                result = model(x_c, x_c_rtn, s_c, x, s, training=True, step=global_step, log_dir = log_dir)
+                result = model(x_c, x_c_rtn, s_c, x, s, training=True, step=global_step, log_dir=log_dir)
                 joint_loss, mle, sharpe = joint_loss_function(
                     result, labels, target_std, warm_up, alpha=alpha
                 )

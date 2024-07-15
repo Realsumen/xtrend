@@ -54,8 +54,8 @@ class FFN_j(Model):
         output = self.linear_3(dropout_output)
     
         if training and step is not None:
+            summary_writer = tf.summary.create_file_writer(log_dir)
             with summary_writer.as_default():
-                summary_writer = tf.summary.create_file_writer(log_dir)
                 tf.summary.histogram('FFN_j_add_output', add_output, step=step)
                 tf.summary.histogram('FFN_j_elu_output', elu_output, step=step)
                 tf.summary.histogram('FFN_j_dropout_output', dropout_output, step=step)
@@ -426,27 +426,27 @@ class Decoder(Model):
 
 
 class ModelWrapper(Model):
-    def __init__(self, sequence_length, hidden_dim, encoding_size, num_heads, dropout_rate):
+    def __init__(self, feature_length, hidden_dim, encoding_size, num_heads, dropout_rate):
         """
         初始化 ModelWrapper 类。
 
         Args:
-            sequence_length (int): 特征序列长度。
+            feature_length (int): 特征序列长度。
             hidden_dim (int): 隐藏层维度。
             encoding_size (int): 编码大小。
             num_heads (int): 多头注意力的头数。
         """
         super(ModelWrapper, self).__init__()
         self.hidden_dim = hidden_dim
-        self.info_seq_length = sequence_length + 1
+        self.info_seq_length = feature_length + 1
         self.V_encoder = BaselineNeuralForecaster(
             self.info_seq_length, hidden_dim, encoding_size, dropout_rate=dropout_rate
         )
         self.K_encoder = BaselineNeuralForecaster(
-            sequence_length, hidden_dim, encoding_size, dropout_rate=dropout_rate
+            feature_length, hidden_dim, encoding_size, dropout_rate=dropout_rate
         )
-        self.encoder = Encoder(hidden_dim, num_heads, sequence_length, encoding_size, dropout_rate=dropout_rate)
-        self.decoder = Decoder(sequence_length, hidden_dim, encoding_size, dropout_rate=dropout_rate)
+        self.encoder = Encoder(hidden_dim, num_heads, feature_length, encoding_size, dropout_rate=dropout_rate)
+        self.decoder = Decoder(feature_length, hidden_dim, encoding_size, dropout_rate=dropout_rate)
 
 
     def build(self, input_shape):
@@ -483,10 +483,16 @@ class ModelWrapper(Model):
             positions: 每一个时间点的下一天持仓
         """
         
-        V = self.V_encoder(x_c_r, s_c)
-        K = self.K_encoder(x_c, s_c)
-        y = self.encoder(V, K, s, x)
-        properties, positions = self.decoder(x, s, y, training=training, step=step, log_dir=log_dir)
+        num_classes = s.shape[-1] + 1
+        embedding_dim = self.hidden_dim
+        embedding_matrix = tf.Variable(tf.random.uniform([num_classes, embedding_dim]), name="embedding_matrix")
+        embedded_s = tf.nn.embedding_lookup(embedding_matrix, tf.argmax(s, axis=-1))
+        embedded_s_c= tf.nn.embedding_lookup(embedding_matrix, tf.argmax(s_c, axis=-1))
+        
+        V = self.V_encoder(x_c_r, embedded_s_c)
+        K = self.K_encoder(x_c, embedded_s_c)
+        y = self.encoder(V, K, embedded_s, x)
+        properties, positions = self.decoder(x, embedded_s, y, training=training, step=step, log_dir=log_dir)
         properties = tf.cast(properties, tf.float64)
         positions = tf.cast(tf.squeeze(positions, axis=-1), tf.float64)
 
