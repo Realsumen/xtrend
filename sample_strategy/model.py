@@ -39,7 +39,7 @@ class FFN_j(Model):
         self.elu.build(new_shape)
         super(FFN_j, self).build(input_shape)
 
-    def call(self, h_t) -> tf.Tensor:
+    def call(self, h_t, training=False, step=None, log_dir="logs") -> tf.Tensor:
         """前向传播方法。
 
         Args:
@@ -52,7 +52,22 @@ class FFN_j(Model):
         elu_output = self.elu(add_output)
         dropout_output = self.dropout(elu_output)
         output = self.linear_3(dropout_output)
+    
+        if training and step is not None:
+            with summary_writer.as_default():
+                summary_writer = tf.summary.create_file_writer(log_dir)
+                tf.summary.histogram('FFN_j_add_output', add_output, step=step)
+                tf.summary.histogram('FFN_j_elu_output', elu_output, step=step)
+                tf.summary.histogram('FFN_j_dropout_output', dropout_output, step=step)
+                tf.summary.histogram('FFN_j_output', output, step=step)
+                
+                # 记录每一层的权重
+                for layer in self.layers:
+                    for weight in layer.weights:
+                        tf.summary.histogram(weight.name, weight, step=step)
+
         return output
+    
 
 
 class FFN(Model):
@@ -364,7 +379,7 @@ class Decoder(Model):
         self.PTP.build((x_shape[0], x_shape[1], x_shape[2], 2))
         super(Decoder, self).build(input_shape)
 
-    def call(self, x, s, y) -> tf.Tensor:
+    def call(self, x, s, y, training=False, step=None, log_dir="logs") -> tf.Tensor:
         """
         执行前向传播。
 
@@ -389,7 +404,24 @@ class Decoder(Model):
         a = self.layer_norm(outputs + x_)
         result = self.layer_norm(self.FFN_2(a, s) + a)
         properties = self.fcn(result)
-        positions = tanh(self.PTP(properties))
+        PTP_outputs = self.PTP(properties, training=training, step=step, log_dir=log_dir)
+        positions = tanh(PTP_outputs)
+        
+        if training and step is not None:
+            summary_writer = tf.summary.create_file_writer(log_dir)
+            with summary_writer.as_default():
+                tf.summary.histogram('lstm_outputs', outputs, step=step)
+                tf.summary.histogram('layer_norm_output', a, step=step)
+                tf.summary.histogram('FFN_2_output', result, step=step)
+                tf.summary.histogram('fcn_output/properties', properties, step=step)
+                tf.summary.histogram('PTP_outputs', PTP_outputs, step=step)
+                tf.summary.histogram('positions', positions, step=step)
+                
+                # 记录每一层的权重
+                for layer in self.layers:
+                    for weight in layer.weights:
+                        tf.summary.histogram(weight.name, weight, step=step)
+
         return properties, positions
 
 
@@ -416,6 +448,7 @@ class ModelWrapper(Model):
         self.encoder = Encoder(hidden_dim, num_heads, sequence_length, encoding_size, dropout_rate=dropout_rate)
         self.decoder = Decoder(sequence_length, hidden_dim, encoding_size, dropout_rate=dropout_rate)
 
+
     def build(self, input_shape):
         """
         构建层的权重。
@@ -433,7 +466,8 @@ class ModelWrapper(Model):
         self.decoder.build((x_shape, s_shape))
         super(ModelWrapper, self).build(input_shape)
 
-    def call(self, x_c, x_c_r, s_c, x, s) -> tuple:
+
+    def call(self, x_c, x_c_r, s_c, x, s, training=False, step=None, log_dir="logs") -> tuple:
         """
         执行前向传播。
 
@@ -448,11 +482,24 @@ class ModelWrapper(Model):
             properties: 一个长度为2的tuple, 分别为明日收益率的期望和标准差
             positions: 每一个时间点的下一天持仓
         """
+        
         V = self.V_encoder(x_c_r, s_c)
         K = self.K_encoder(x_c, s_c)
         y = self.encoder(V, K, s, x)
-        properties, positions = self.decoder(x, s, y)
+        properties, positions = self.decoder(x, s, y, training=training, step=step, log_dir=log_dir)
         properties = tf.cast(properties, tf.float64)
         positions = tf.cast(tf.squeeze(positions, axis=-1), tf.float64)
+
+        # if training and step is not None:
+        #     summary_writer = tf.summary.create_file_writer(log_dir)
+        #     with summary_writer.as_default():
+        #         tf.summary.histogram('V_encoder_output', V, step=step)
+        #         tf.summary.histogram('K_encoder_output', K, step=step)
+        #         tf.summary.histogram('encoder_output', y, step=step)
+                
+        #         # 记录每一层的权重
+        #         for layer in self.layers:
+        #             for weight in layer.weights:
+        #                 tf.summary.histogram(weight.name, weight, step=step)
 
         return properties, positions

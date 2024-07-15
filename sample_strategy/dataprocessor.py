@@ -1,4 +1,5 @@
 import os
+from typing import List, Union, Tuple
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 import pandas as pd
@@ -103,7 +104,7 @@ def process_data_list(
     first_date: int = None,
     last_date: int = None,
     fill: bool = False
-) -> list[pd.DataFrame]:
+) ->  Union[list[pd.DataFrame], Tuple[list[pd.DataFrame], list[int]]]:
     """
     处理文件列表并生成包含特征的数据帧列表。
 
