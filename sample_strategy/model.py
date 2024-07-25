@@ -1,6 +1,6 @@
 from typing import assert_type
 import tensorflow as tf
-from tensorflow.keras.activations import tanh
+from tensorflow.keras.activations import tanh, sigmoid
 from tensorflow.keras.layers import (
     Dense,
     ELU,
@@ -39,7 +39,7 @@ class FFN_j(Model):
         self.elu.build(new_shape)
         super(FFN_j, self).build(input_shape)
 
-    def call(self, h_t, training=False, step=None, log_dir="logs") -> tf.Tensor:
+    def call(self, h_t, training=False, step=None, writer=None) -> tf.Tensor:
         """前向传播方法。
 
         Args:
@@ -53,9 +53,8 @@ class FFN_j(Model):
         dropout_output = self.dropout(elu_output)
         output = self.linear_3(dropout_output)
     
-        if training and step is not None:
-            summary_writer = tf.summary.create_file_writer(log_dir)
-            with summary_writer.as_default():
+        if writer is not None and step is not None:
+            with writer.as_default():
                 tf.summary.histogram('FFN_j_add_output', add_output, step=step)
                 tf.summary.histogram('FFN_j_elu_output', elu_output, step=step)
                 tf.summary.histogram('FFN_j_dropout_output', dropout_output, step=step)
@@ -379,7 +378,7 @@ class Decoder(Model):
         self.PTP.build((x_shape[0], x_shape[1], x_shape[2], 2))
         super(Decoder, self).build(input_shape)
 
-    def call(self, x, s, y, training=False, step=None, log_dir="logs") -> tf.Tensor:
+    def call(self, x, s, y, training=False, step=None, writer=None) -> tf.Tensor:
         """
         执行前向传播。
 
@@ -404,23 +403,20 @@ class Decoder(Model):
         a = self.layer_norm(outputs + x_)
         result = self.layer_norm(self.FFN_2(a, s) + a)
         properties = self.fcn(result)
-        PTP_outputs = self.PTP(properties, training=training, step=step, log_dir=log_dir)
+        pred_mean = tanh(properties[:, :, :, 0])
+        pred_std = sigmoid(properties[:, :, :, 1])
+        properties = tf.stack([pred_mean, pred_std], axis=-1)
+        PTP_outputs = self.PTP(properties, training=training, step=step)
         positions = tanh(PTP_outputs)
-        
-        if training and step is not None:
-            summary_writer = tf.summary.create_file_writer(log_dir)
-            with summary_writer.as_default():
+        if writer is not None and step is not None:
+            with writer.as_default():
                 tf.summary.histogram('lstm_outputs', outputs, step=step)
                 tf.summary.histogram('layer_norm_output', a, step=step)
                 tf.summary.histogram('FFN_2_output', result, step=step)
                 tf.summary.histogram('fcn_output/properties', properties, step=step)
-                tf.summary.histogram('PTP_outputs', PTP_outputs, step=step)
+                tf.summary.histogram('pred_mean', properties[:, :, :, 0], step=step)
+                tf.summary.histogram('pred_std', properties[:, :, :, -1], step=step)
                 tf.summary.histogram('positions', positions, step=step)
-                
-                # 记录每一层的权重
-                for layer in self.layers:
-                    for weight in layer.weights:
-                        tf.summary.histogram(weight.name, weight, step=step)
 
         return properties, positions
 
@@ -467,7 +463,7 @@ class ModelWrapper(Model):
         super(ModelWrapper, self).build(input_shape)
 
 
-    def call(self, x_c, x_c_r, s_c, x, s, training=False, step=None, log_dir="logs") -> tuple:
+    def call(self, x_c, x_c_r, s_c, x, s, training=False, step=None, writer=None) -> tuple:
         """
         执行前向传播。
 
@@ -492,11 +488,11 @@ class ModelWrapper(Model):
         V = self.V_encoder(x_c_r, embedded_s_c)
         K = self.K_encoder(x_c, embedded_s_c)
         y = self.encoder(V, K, embedded_s, x)
-        properties, positions = self.decoder(x, embedded_s, y, training=training, step=step, log_dir=log_dir)
+        properties, positions = self.decoder(x, embedded_s, y, training=training, step=step, writer=writer)
         properties = tf.cast(properties, tf.float64)
         positions = tf.cast(tf.squeeze(positions, axis=-1), tf.float64)
 
-        # if training and step is not None:
+        # if writer is not None and step is not None:
         #     summary_writer = tf.summary.create_file_writer(log_dir)
         #     with summary_writer.as_default():
         #         tf.summary.histogram('V_encoder_output', V, step=step)

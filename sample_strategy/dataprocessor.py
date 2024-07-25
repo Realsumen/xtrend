@@ -79,16 +79,17 @@ def process_file(args):
     
     # 判断文件的类型, 进行处理
     if file.endswith("xlsx"):
-        data = pd.read_excel(f"data/{file}")[["日期", "收盘价(元)"]]
+        data = pd.read_excel(f"{file}")[["日期", "收盘价(元)"]]
         side_info = file.replace(".xlsx", "")
     elif file.endswith("parquet"):
-        data = pd.read_parquet(f"data/{file}")[["日期", "收盘价(元)"]]
+        data = pd.read_parquet(f"{file}")[["日期", "收盘价(元)"]]
         side_info = file.replace(".parquet", "")
     elif file.endswith("csv"):
-        data = pd.read_csv(f"data/{file}")[["日期", "收盘价(元)"]]
+        data = pd.read_csv(f"{file}")[["日期", "收盘价(元)"]]
         side_info = file.replace(".csv", "")
     data = data.rename(columns={"日期": "date", "收盘价(元)": "close"}).sort_values("date")
     data["side_info"] = side_info
+    data["date"] = data["date"].apply(lambda x: int(x.strftime('%Y%m%d')))
     try:
         data = generate_features(data, macd_timescales, rtn_timescales)
         return data
@@ -261,7 +262,7 @@ def generate_context_tensors(data_list: list[pd.DataFrame], method: str, **param
             df[feature_cols].values for df in gaussion_process_list if len(df) > 0
         ]
         date_list = [
-            df["date"].iloc[-1].astype(int)
+            int(df["date"].iloc[-1].strftime('%Y%m%d'))
             for df in gaussion_process_list
             if len(df) > 0
         ]
